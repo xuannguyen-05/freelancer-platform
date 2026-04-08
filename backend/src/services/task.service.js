@@ -55,7 +55,7 @@ const createTaskService = async(projectId, userId, data) => {
         throw new AppError("Project Not Found", 404)
     }
 
-    const contract = await Contract.findById({ projectId: projectId })
+    const contract = await Contract.findOne({ projectId: projectId })
 
     if (!contract) {
         throw new AppError("Contract Not Found", 404)
@@ -438,6 +438,11 @@ const getFreelancerWorkloadService = async (freelancerId) => {
                         ]
                     }
                 },
+                completedTasks: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", "done"] }, 1, 0]
+                    }
+                },
 
                 totalEstimated: { $sum: "$estimatedHours" },
                 totalActual: { $sum: "$actualHours" }
@@ -448,6 +453,7 @@ const getFreelancerWorkloadService = async (freelancerId) => {
     return stats[0] || {
         totalTasks: 0,
         activeTasks: 0,
+        completedTasks: 0,
         totalEstimated: 0,
         totalActual: 0
     }
