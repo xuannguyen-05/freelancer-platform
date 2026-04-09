@@ -91,8 +91,7 @@ router.get("/overview", authMiddleware, roleMiddleware(["admin"]), getOverview);
 router.get(
   "/freelancer/:id/stats",
   authMiddleware,
-  roleMiddleware(["admin"]),
-  getFreelancerStats,
+  getFreelancerStats
 );
 
 /**

@@ -51,12 +51,17 @@ router.patch(
  *   patch:
  *     summary: Buyer marks project as completed
  *     tags: [Project]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Project completed successfully
  */
 router.patch("/:id/complete", authMiddleware, completeProject);
 
@@ -66,12 +71,17 @@ router.patch("/:id/complete", authMiddleware, completeProject);
  *   patch:
  *     summary: Cancel project
  *     tags: [Project]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Project cancelled successfully
  */
 router.patch("/:id/cancel", authMiddleware, cancelProject);
 
@@ -81,6 +91,8 @@ router.patch("/:id/cancel", authMiddleware, cancelProject);
  *   post:
  *     summary: Create task under a project
  *     tags: [Project]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: projectId
@@ -104,6 +116,9 @@ router.patch("/:id/cancel", authMiddleware, cancelProject);
  *                 type: string
  *               estimatedHours:
  *                 type: number
+ *     responses:
+ *       201:
+ *         description: Task created successfully
  */
 router.post(
   "/:projectId/tasks",
@@ -112,7 +127,24 @@ router.post(
   createTask,
 );
 
-
+/**
+ * @swagger
+ * /api/projects/{projectId}/tasks:
+ *   get:
+ *     summary: Get tasks by project
+ *     tags: [Project]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Get tasks by project successfully
+ */
 router.get("/:projectId/tasks", authMiddleware, getTasksByProject);
 
 module.exports = router;

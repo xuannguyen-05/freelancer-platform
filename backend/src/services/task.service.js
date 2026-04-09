@@ -315,10 +315,23 @@ const updateTaskStatusService = async (taskId, userId, data) => {
     return updated
 }
 
-const getTaskStatsByProjectService = async (projectId) => {
+const getTaskStatsByProjectService = async (projectId, userId) => {
 
     if (!mongoose.Types.ObjectId.isValid(projectId)) {
         throw new AppError("Invalid Project ID", 400)
+    }
+
+    const project = await Project.findById(projectId)
+
+    if (!project) {
+        throw new AppError("Project Not Found", 404)
+    }
+
+    const isBuyer = String(userId) === String(project.buyerId)
+    const isFreelancer = String(userId) === String(project.freelancerId)
+
+    if (!isBuyer && !isFreelancer) {
+        throw new AppError("You are not allowed to access", 403)
     }
 
     const stats = await Task.aggregate([
@@ -368,10 +381,23 @@ const getTaskStatsByProjectService = async (projectId) => {
     }
 }
 
-const getProjectProgressService = async (projectId) => {
+const getProjectProgressService = async (projectId, userId) => {
 
     if (!mongoose.Types.ObjectId.isValid(projectId)) {
         throw new AppError("Invalid Project ID", 400)
+    }
+
+    const project = await Project.findById(projectId)
+
+    if (!project) {
+        throw new AppError("Project Not Found", 404)
+    }
+
+    const isBuyer = String(userId) === String(project.buyerId)
+    const isFreelancer = String(userId) === String(project.freelancerId)
+
+    if (!isBuyer && !isFreelancer) {
+        throw new AppError("You are not allowed to access", 403)
     }
 
     const result = await Task.aggregate([

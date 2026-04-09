@@ -187,9 +187,11 @@ const getFreelancerStats = async (req, res) => {
 const getProjectSummary = async (req, res) => {
     try {
         
+        const userId = req.user.userID
+
         const projectId = req.params.projectId
 
-        const summary = await getProjectSummaryService(projectId)
+        const summary = await getProjectSummaryService(projectId, userId)
 
         res.status(200).json({
             message: "Get project summary successfully",

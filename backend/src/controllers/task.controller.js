@@ -110,9 +110,12 @@ const updateTaskStatus = async(req, res) => {
 
 const getTaskStatsByProject = async(req, res) => {
     try {
+
+        const userId = req.user.userID
+
         const projectId = req.params.projectId
 
-        const stats = await getTaskStatsByProjectService(projectId)
+        const stats = await getTaskStatsByProjectService(projectId, userId)
 
         res.status(200).json({
             message: "Get task stats successfully",
@@ -127,9 +130,12 @@ const getTaskStatsByProject = async(req, res) => {
 
 const getProjectProgress = async(req, res) => {
     try {
+
+        const userId = req.user.userID
+
         const projectId = req.params.projectId
 
-        const progress = await getProjectProgressService(projectId)
+        const progress = await getProjectProgressService(projectId, userId)
 
         res.status(200).json({
             message: "Get project progress successfully",
@@ -144,6 +150,7 @@ const getProjectProgress = async(req, res) => {
 
 const getFreelancerWorkload = async(req, res) => {
     try {
+
         const freelancerId = req.params.id
 
         const workload = await getFreelancerWorkloadService(freelancerId)
