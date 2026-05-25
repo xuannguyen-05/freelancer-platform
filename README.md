@@ -1,4 +1,4 @@
-# 🎯 Freelancer Marketplace - Backend API
+# 🎯 Freelancer Marketplace 
 
 **Freelancer Marketplace** là một REST API backend cho nền tảng freelance tương tự Fiverr, giúp freelancer bán dịch vụ, buyer tìm dịch vụ, và quản lý dự án/hợp đồng.
 
