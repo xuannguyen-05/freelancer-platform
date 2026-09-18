@@ -55,7 +55,7 @@ const createTaskService = async(projectId, userId, data) => {
         throw new AppError("Project Not Found", 404)
     }
 
-    const contract = await Contract.findById({ projectId: projectId })
+    const contract = await Contract.findOne({ projectId: projectId })
 
     if (!contract) {
         throw new AppError("Contract Not Found", 404)
@@ -315,10 +315,23 @@ const updateTaskStatusService = async (taskId, userId, data) => {
     return updated
 }
 
-const getTaskStatsByProjectService = async (projectId) => {
+const getTaskStatsByProjectService = async (projectId, userId) => {
 
     if (!mongoose.Types.ObjectId.isValid(projectId)) {
         throw new AppError("Invalid Project ID", 400)
+    }
+
+    const project = await Project.findById(projectId)
+
+    if (!project) {
+        throw new AppError("Project Not Found", 404)
+    }
+
+    const isBuyer = String(userId) === String(project.buyerId)
+    const isFreelancer = String(userId) === String(project.freelancerId)
+
+    if (!isBuyer && !isFreelancer) {
+        throw new AppError("You are not allowed to access", 403)
     }
 
     const stats = await Task.aggregate([
@@ -368,10 +381,23 @@ const getTaskStatsByProjectService = async (projectId) => {
     }
 }
 
-const getProjectProgressService = async (projectId) => {
+const getProjectProgressService = async (projectId, userId) => {
 
     if (!mongoose.Types.ObjectId.isValid(projectId)) {
         throw new AppError("Invalid Project ID", 400)
+    }
+
+    const project = await Project.findById(projectId)
+
+    if (!project) {
+        throw new AppError("Project Not Found", 404)
+    }
+
+    const isBuyer = String(userId) === String(project.buyerId)
+    const isFreelancer = String(userId) === String(project.freelancerId)
+
+    if (!isBuyer && !isFreelancer) {
+        throw new AppError("You are not allowed to access", 403)
     }
 
     const result = await Task.aggregate([
@@ -438,6 +464,11 @@ const getFreelancerWorkloadService = async (freelancerId) => {
                         ]
                     }
                 },
+                completedTasks: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", "done"] }, 1, 0]
+                    }
+                },
 
                 totalEstimated: { $sum: "$estimatedHours" },
                 totalActual: { $sum: "$actualHours" }
@@ -448,6 +479,7 @@ const getFreelancerWorkloadService = async (freelancerId) => {
     return stats[0] || {
         totalTasks: 0,
         activeTasks: 0,
+        completedTasks: 0,
         totalEstimated: 0,
         totalActual: 0
     }

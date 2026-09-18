@@ -25,6 +25,10 @@ const createContractService = async(projectId, userId, data) => {
         throw new AppError("Cannot assign yourself", 400)
     }
 
+    if (String(data.freelancerId) !== String(project.freelancerId)) {
+        throw new AppError("Freelancer must match project assignee", 400)
+    }
+
     if (project.status !== PROJECT_STATUS.PLANNING) {
         throw new AppError("Cannot create contract for this project", 400)
     }
@@ -390,10 +394,23 @@ const getFreelancerStatsService = async (freelancerId) => {
     }
 }
 
-const getProjectSummaryService = async (projectId) => {
+const getProjectSummaryService = async (projectId, userId) => {
 
     if (!mongoose.Types.ObjectId.isValid(projectId)) {
         throw new AppError("Invalid Project ID", 400)
+    }
+
+    const project = await Project.findById(projectId)
+    
+    if (!project) {
+        throw new AppError("Project Not Found", 404)
+    }
+
+    const isBuyer = String(userId) === String(project.buyerId)
+    const isFreelancer = String(userId) === String(project.freelancerId)
+
+    if (!isBuyer && !isFreelancer) {
+        throw new AppError("You are not allowed to access", 403)
     }
     
     const stats = await Contract.aggregate([

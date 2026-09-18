@@ -73,8 +73,7 @@ const getMyProjectsService = async (userId, role, page, limit) => {
         throw new AppError("Unauthorized", 401)
     }
 
-    let filter
-
+    let filter 
     if (role === "buyer") {
         filter = { buyerId: userId }
     } else if (role === "freelancer") {

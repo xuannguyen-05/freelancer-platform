@@ -35,12 +35,6 @@ const taskSchema = new mongoose.Schema({
         default: "todo",
         index: true
     },
-    progress: {
-        type: Number,
-        min: 0,
-        max: 100,
-        default: 0
-    },
     estimatedHours: {
         type: Number,
         min: 0,

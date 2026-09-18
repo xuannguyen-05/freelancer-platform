@@ -28,13 +28,9 @@ const updateTaskStatusSchema = z.object({
     status: z.enum(["todo", "in_progress", "done", "cancelled"])
 })
 
-const updateTaskProgressSchema = z.object({
-    progress: z.number().min(0).max(100)
-})
 
 module.exports = {
   createTaskSchema,
   updateTaskSchema,
   updateTaskStatusSchema,
-  updateTaskProgressSchema
 }

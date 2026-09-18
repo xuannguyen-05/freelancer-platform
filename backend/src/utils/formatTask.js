@@ -19,7 +19,6 @@ const formatTaskSummary = (task) => {
     title: task.title,
     status: task.status,
     statusText: TASK_STATUS_LABEL[task.status],
-    progress: task.progress,
     createdAt: task.createdAt
   }
 }
@@ -35,7 +34,6 @@ const formatTaskDetail = (task) => {
     description: task.description,
     status: task.status,
     statusText: TASK_STATUS_LABEL[task.status],
-    progress: task.progress,
     estimatedHours: task.estimatedHours,
     actualHours: task.actualHours,
     createdAt: task.createdAt,

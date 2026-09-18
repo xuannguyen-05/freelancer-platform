@@ -17,7 +17,6 @@ const {
   createTaskSchema,
   updateTaskSchema,
   updateTaskStatusSchema,
-  updateTaskProgressSchema,
 } = require("../schemas/task.schema");
 
 const router = express.Router();
