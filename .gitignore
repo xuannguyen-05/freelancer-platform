@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+
+# env
+.env
+
+Sketch_UI/
+backend/.env.local
+
+# build
+dist/
+build/
+
+# logs
+*.log
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
