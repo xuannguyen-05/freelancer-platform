@@ -139,7 +139,7 @@ const updateGigService = async(gigId, userId, data) => {
     const updateData = {}
     if (data.title !== undefined) updateData.title = data.title
     if (data.description !== undefined) updateData.description = data.description
-    if (data.img_url !== undefined) updateData.image = data.img_url
+    if (data.img_url !== undefined) updateData.img_url = data.img_url
 
     if (data.categoryID) {
         if (!mongoose.Types.ObjectId.isValid(data.categoryID)) {

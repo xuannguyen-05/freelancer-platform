@@ -1,6 +1,19 @@
+const { CONTRACT_STATUS_LABEL } = require("../constants/contractStatus")
+
 const calculateRemaining = (contract) => {
   if (!contract) return 0
-  return contract.price - contract.paidAmount
+  const budget = contract.type === "hourly"
+    ? (contract.price * (contract.hours || 0))
+    : contract.price
+
+  return budget - contract.paidAmount
+}
+
+const calculateBudget = (contract) => {
+  if (!contract) return 0
+  return contract.type === "hourly"
+    ? (contract.price * (contract.hours || 0))
+    : contract.price
 }
 
 const formatContractSummary = (contract) => {
@@ -10,9 +23,12 @@ const formatContractSummary = (contract) => {
     id: String(contract._id),
     projectId: String(contract.projectId),
     freelancerId: String(contract.freelancerId),
+    memberIds: (contract.memberIds || []).map(String),
 
     type: contract.type,
     price: contract.price,
+    hours: contract.hours,
+    budget: calculateBudget(contract),
 
     remaining: calculateRemaining(contract),
 
@@ -31,9 +47,12 @@ const formatContractDetail = (contract) => {
     projectId: String(contract.projectId),
     buyerId: String(contract.buyerId),
     freelancerId: String(contract.freelancerId),
+    memberIds: (contract.memberIds || []).map(String),
 
     type: contract.type,
     price: contract.price,
+    hours: contract.hours,
+    budget: calculateBudget(contract),
     paidAmount: contract.paidAmount,
 
     remaining: calculateRemaining(contract),

@@ -3,11 +3,6 @@ const User = require("../models/user")
 const roleMiddleware = (roles) => {
   return async (req, res, next) => {
     try {
-      const tokenRole = req.user?.role
-      if (tokenRole && roles.includes(tokenRole)) {
-        return next()
-      }
-
       const userId = req.user?.userId || req.user?.userID
       if (!userId) {
         return res.status(401).json({
@@ -15,9 +10,9 @@ const roleMiddleware = (roles) => {
         })
       }
 
-      const user = await User.findById(userId).select("role")
+      const user = await User.findById(userId).select("role isActive")
 
-      if (!user) {
+      if (!user || !user.isActive) {
         return res.status(401).json({
           message: "Unauthorized"
         })

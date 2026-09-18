@@ -4,6 +4,7 @@ const normalizeTaskBase = (task) => {
   return {
     id: String(task._id),
     projectId: task.projectId ? String(task.projectId) : null,
+    contractId: task.contractId ? String(task.contractId) : null,
     parentTaskId: task.parentTaskId ? String(task.parentTaskId) : null,
     assigneeId: task.assigneeId ? String(task.assigneeId) : null
   }
@@ -18,6 +19,8 @@ const formatTaskSummary = (task) => {
     ...base,
     title: task.title,
     status: task.status,
+    dueDate: task.dueDate,
+    effortPoint: task.effortPoint,
     statusText: TASK_STATUS_LABEL[task.status],
     createdAt: task.createdAt
   }
@@ -35,7 +38,10 @@ const formatTaskDetail = (task) => {
     status: task.status,
     statusText: TASK_STATUS_LABEL[task.status],
     estimatedHours: task.estimatedHours,
+    effortPoint: task.effortPoint,
     actualHours: task.actualHours,
+    dueDate: task.dueDate,
+    completedAt: task.completedAt,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt
   }

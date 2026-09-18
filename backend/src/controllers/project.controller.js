@@ -59,7 +59,8 @@ const getMyProjects = async(req, res) => {
 
         res.status(200).json({
             message: "Get my projects successfully",
-            data: projects.map(formatProjectSummary)
+            data: projects.projects.map(formatProjectSummary),
+            pagination: projects.pagination
         })
     } catch (error) {
         res.status(error.statusCode || 500).json({

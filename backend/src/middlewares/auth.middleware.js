@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken")
+const User = require("../models/user")
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
     const authHeader = req.headers.authorization
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -14,7 +15,20 @@ const authMiddleware = (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
 
-        req.user = decoded
+        const userId = decoded.userID || decoded.userId
+        const user = await User.findById(userId).select("role isActive")
+
+        if (!user || !user.isActive) {
+            return res.status(401).json({
+                message: "User is inactive or no longer exists"
+            })
+        }
+
+        req.user = {
+            ...decoded,
+            userID: String(user._id),
+            role: user.role
+        }
         next()
         
     } catch (error) {

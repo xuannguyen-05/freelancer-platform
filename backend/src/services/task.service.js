@@ -1,45 +1,81 @@
 const mongoose = require("mongoose")
 const Project = require("../models/project")
-const User = require("../models/user")
 const Task = require("../models/task")
 const { TASK_STATUS } = require("../constants/taskStatus")
 const { PROJECT_STATUS } = require("../constants/projectStatus")
 const AppError = require("../utils/AppError")
 const { CONTRACT_STATUS } = require("../constants/contractStatus")
 const Contract = require("../models/contract")
+const User = require("../models/user")
+
+
+const isProjectParticipant = async (projectId, userId) => {
+    const member = await Contract.exists({
+        projectId,
+        $or: [{ freelancerId: userId }, { memberIds: userId }]
+    })
+
+    return Boolean(member)
+}
+
+const assertProjectAccess = async (project, userId) => {
+    if (String(project.buyerId) === String(userId)) {
+        return
+    }
+
+    const isParticipant = await isProjectParticipant(project._id, userId)
+
+    if (!isParticipant) {
+        throw new AppError("You are not allowed to access this project", 403)
+    }
+}
+
+const assertContractLead = (contract, userId) => {
+    if (String(contract.freelancerId) !== String(userId)) {
+        throw new AppError("Only contract lead can plan tasks", 403)
+    }
+}
+
+const resolveAllowedAssigneeIds = async (contract) => {
+    const ids = [String(contract.freelancerId), ...(contract.memberIds || []).map(String)]
+    const uniqueIds = [...new Set(ids)]
+
+    const freelancers = await User.find({ _id: { $in: uniqueIds }, role: "freelancer" })
+        .select("_id")
+        .lean()
+
+    return new Set(freelancers.map(user => String(user._id)))
+}
+
+const toObjectId = (value, fieldName) => {
+    if (!mongoose.Types.ObjectId.isValid(value)) {
+        throw new AppError(`Invalid ${fieldName}`, 400)
+    }
+
+    return new mongoose.Types.ObjectId(value)
+}
 
 
 const updateProjectStatusIfNeeded = async (project) => {
-    const stats = await Task.aggregate([
-        { $match: { projectId: project._id } },
-        {
-            $group: {
-                _id: null,
-                total: { $sum: 1 },
-                done: {
-                    $sum: {
-                        $cond: [{ $eq: ["$status", TASK_STATUS.DONE] }, 1, 0]
-                    }
-                },
-                cancelled: {
-                    $sum: {
-                        $cond: [{ $eq: ["$status", TASK_STATUS.CANCELLED] }, 1, 0]
-                    }
-                }
-            }
-        }
+    const [openTasks, contracts] = await Promise.all([
+        Task.countDocuments({
+            projectId: project._id,
+            status: { $in: [TASK_STATUS.TODO, TASK_STATUS.IN_PROGRESS] }
+        }),
+        Contract.find({ projectId: project._id }).select("status").lean()
     ])
 
-    const total = stats[0]?.total || 0
-    const done = stats[0]?.done || 0
-    const cancelled = stats[0]?.cancelled || 0
+    if (!contracts.length) {
+        return
+    }
 
-    //  rule: done + cancelled = total → project finished
-    if (total > 0 && done + cancelled === total) {
-        if (project.status !== PROJECT_STATUS.DELIVERED) {
-            project.status = PROJECT_STATUS.DELIVERED
-            await project.save()
-        }
+    const allContractsClosed = contracts.every(
+        c => c.status === CONTRACT_STATUS.COMPLETED || c.status === CONTRACT_STATUS.CANCELLED
+    )
+
+    if (allContractsClosed && openTasks === 0 && project.status !== PROJECT_STATUS.DELIVERED) {
+        project.status = PROJECT_STATUS.DELIVERED
+        await project.save()
     }
 }
 
@@ -55,23 +91,40 @@ const createTaskService = async(projectId, userId, data) => {
         throw new AppError("Project Not Found", 404)
     }
 
-    const contract = await Contract.findOne({ projectId: projectId })
+    await assertProjectAccess(project, userId)
+
+    const contractId = toObjectId(data.contractId, "Contract ID")
+
+    const contract = await Contract.findOne({
+        _id: contractId,
+        projectId: project._id
+    })
 
     if (!contract) {
         throw new AppError("Contract Not Found", 404)
     }
 
+    assertContractLead(contract, userId)
+
     if (contract.status !== CONTRACT_STATUS.ACTIVE) {
         throw new AppError("Contract is not active yet", 400)
     }
 
-    if (String(project.buyerId) !== String(userId)) {
-        throw new AppError("Only buyer can create task", 403)
+        const allowedAssigneeIds = await resolveAllowedAssigneeIds(contract)
+
+        if (data.assigneeId && !allowedAssigneeIds.has(String(data.assigneeId))) {
+            throw new AppError("Assignee must belong to contract team", 400)
     }
 
-    if (data.assigneeId) {
-        if (String(data.assigneeId) !== String(project.freelancerId)) {
-            throw new AppError("Invalid assignee", 400)
+    if (data.parentTaskId) {
+        const parentTask = await Task.findOne({
+            _id: data.parentTaskId,
+            projectId: project._id,
+            contractId: contract._id
+        })
+
+        if (!parentTask) {
+            throw new AppError("Parent task not found in the same contract", 400)
         }
     }
 
@@ -85,11 +138,15 @@ const createTaskService = async(projectId, userId, data) => {
     }
 
      const task = await Task.create({
-        projectId,
-        assigneeId: data.assigneeId || null,
+        projectId: project._id,
+        contractId: contract._id,
+        parentTaskId: data.parentTaskId || null,
+        assigneeId: data.assigneeId || String(contract.freelancerId),
         title: data.title,
         description: data.description ?? "",
         estimatedHours: data.estimatedHours || 0,
+        effortPoint: data.effortPoint || 3,
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
         status: TASK_STATUS.TODO
     })
 
@@ -107,12 +164,7 @@ const getTasksByProjectService = async(projectId, userId, page, limit) => {
         throw new AppError("Project Not Found", 404)
     }
 
-    const isBuyer = String(project.buyerId) === String(userId)
-    const isFreelancer = String(project.freelancerId) === String(userId)
-
-    if (!isBuyer && !isFreelancer) {
-        throw new AppError("You are not allowed to access this tasks", 403)
-    }
+    await assertProjectAccess(project, userId)
 
     const skip = (page - 1) * limit
 
@@ -127,7 +179,7 @@ const getTasksByProjectService = async(projectId, userId, page, limit) => {
     ])
 
     return {
-        tasks,
+        data: tasks,
         pagination: {
             total,
             page,
@@ -154,12 +206,7 @@ const getTaskByIdService = async(taskId, userId) => {
         throw new AppError("Project Not Found", 404)
     }
 
-    const isBuyer = String(project.buyerId) === String(userId)
-    const isFreelancer = String(project.freelancerId) === String(userId)
-
-    if (!isBuyer && !isFreelancer) {
-        throw new AppError("You are not allowed to access this task", 403)
-    }
+    await assertProjectAccess(project, userId)
 
     return task
 }
@@ -181,11 +228,15 @@ const updateTaskService = async(taskId, userId, data) => {
         throw new AppError("Project Not Found", 404)
     }
 
-    const isBuyer = String(project.buyerId) === String(userId)
+    await assertProjectAccess(project, userId)
 
-    if (!isBuyer) {
-        throw new AppError("Only the buyer can update this task", 403)
+    const contract = await Contract.findById(task.contractId)
+
+    if (!contract) {
+        throw new AppError("Contract Not Found", 404)
     }
+
+    assertContractLead(contract, userId)
 
     if (task.status !== TASK_STATUS.TODO) {
         throw new AppError("Cannot Update Task Now", 400)
@@ -202,14 +253,18 @@ const updateTaskService = async(taskId, userId, data) => {
             throw new AppError("Cannot change assignee after task started", 400)
         }
 
-        if (String(data.assigneeId) !== String(project.freelancerId)) {
-            throw new AppError("Invalid assignee", 400)
+        const allowedAssigneeIds = await resolveAllowedAssigneeIds(contract)
+
+        if (!allowedAssigneeIds.has(String(data.assigneeId))) {
+            throw new AppError("Assignee must belong to contract team", 400)
         }
 
         updateData.assigneeId = data.assigneeId
     }
 
     if (data.estimatedHours !== undefined) updateData.estimatedHours = data.estimatedHours
+    if (data.effortPoint !== undefined) updateData.effortPoint = data.effortPoint
+    if (data.dueDate !== undefined) updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null
 
     const updated = await Task.findByIdAndUpdate(
         taskId,
@@ -256,9 +311,14 @@ const updateTaskStatusService = async (taskId, userId, data) => {
     }
 
     const isBuyer = String(project.buyerId) === String(userId)
-    const isFreelancer = String(project.freelancerId) === String(userId)
 
-    if (!isBuyer && !isFreelancer) {
+    const contract = await Contract.findById(task.contractId)
+    const isContractMember = contract && (
+        String(contract.freelancerId) === String(userId) ||
+        (contract.memberIds || []).some(id => String(id) === String(userId))
+    )
+
+    if (!isBuyer && !isContractMember) {
         throw new AppError("You are not allowed", 403)
     }
 
@@ -298,10 +358,12 @@ const updateTaskStatusService = async (taskId, userId, data) => {
         const actualHours = Math.round((durationMs / (1000 * 60 * 60)) * 100) / 100
 
         updateData.actualHours = actualHours
+        updateData.completedAt = new Date()
     }
 
     if (status === TASK_STATUS.CANCELLED) {
         updateData.startedAt = null
+        updateData.completedAt = null
     }
 
     const updated = await Task.findByIdAndUpdate(
@@ -327,12 +389,7 @@ const getTaskStatsByProjectService = async (projectId, userId) => {
         throw new AppError("Project Not Found", 404)
     }
 
-    const isBuyer = String(userId) === String(project.buyerId)
-    const isFreelancer = String(userId) === String(project.freelancerId)
-
-    if (!isBuyer && !isFreelancer) {
-        throw new AppError("You are not allowed to access", 403)
-    }
+    await assertProjectAccess(project, userId)
 
     const stats = await Task.aggregate([
         {
@@ -364,6 +421,30 @@ const getTaskStatsByProjectService = async (projectId, userId) => {
                     }
                 },
 
+                overdue: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $ne: ["$dueDate", null] },
+                                    { $lt: ["$dueDate", new Date()] },
+                                    { $in: ["$status", [TASK_STATUS.TODO, TASK_STATUS.IN_PROGRESS]] }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+
+                totalEffort: { $sum: "$effortPoint" },
+
+                doneEffort: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", TASK_STATUS.DONE] }, "$effortPoint", 0]
+                    }
+                },
+
                 totalEstimated: { $sum: "$estimatedHours" },
 
                 totalActual: { $sum: "$actualHours" }
@@ -376,6 +457,9 @@ const getTaskStatsByProjectService = async (projectId, userId) => {
         todo: 0,
         inProgress: 0,
         done: 0,
+        overdue: 0,
+        totalEffort: 0,
+        doneEffort: 0,
         totalEstimated: 0,
         totalActual: 0
     }
@@ -393,12 +477,7 @@ const getProjectProgressService = async (projectId, userId) => {
         throw new AppError("Project Not Found", 404)
     }
 
-    const isBuyer = String(userId) === String(project.buyerId)
-    const isFreelancer = String(userId) === String(project.freelancerId)
-
-    if (!isBuyer && !isFreelancer) {
-        throw new AppError("You are not allowed to access", 403)
-    }
+    await assertProjectAccess(project, userId)
 
     const result = await Task.aggregate([
         {
@@ -410,13 +489,13 @@ const getProjectProgressService = async (projectId, userId) => {
             $group: {
                 _id: null,
 
-                total: { $sum: 1 },
+                totalEffort: { $sum: "$effortPoint" },
 
-                done: {
+                doneEffort: {
                     $sum: {
                         $cond: [
                             { $eq: ["$status", TASK_STATUS.DONE] },
-                            1,
+                            "$effortPoint",
                             0
                         ]
                     }
@@ -425,28 +504,38 @@ const getProjectProgressService = async (projectId, userId) => {
         }
     ])
 
-    const total = result[0]?.total || 0
-    const done = result[0]?.done || 0
+    const totalEffort = result[0]?.totalEffort || 0
+    const doneEffort = result[0]?.doneEffort || 0
 
-    const progress = total === 0 ? 0 : (done / total) * 100
+    const progress = totalEffort === 0 ? 0 : (doneEffort / totalEffort) * 100
 
     return {
         progress,
-        total,
-        done
+        totalEffort,
+        doneEffort
     }
 }
 
-const getFreelancerWorkloadService = async (freelancerId) => {
+const getFreelancerWorkloadService = async (freelancerId, requesterId, requesterRole) => {
 
     if (!mongoose.Types.ObjectId.isValid(freelancerId)) {
         throw new AppError("Invalid Freelancer ID", 400)
     }
 
+    if (requesterRole !== "admin" && String(requesterId) !== String(freelancerId)) {
+        throw new AppError("Forbidden", 403)
+    }
+
+    const freelancer = await User.findById(freelancerId).select("role").lean()
+    if (!freelancer || freelancer.role !== "freelancer") {
+        throw new AppError("Freelancer not found", 404)
+    }
+
     const stats = await Task.aggregate([
         {
             $match: {
-                assigneeId: new mongoose.Types.ObjectId(freelancerId)
+                assigneeId: new mongoose.Types.ObjectId(freelancerId),
+                status: { $in: [TASK_STATUS.TODO, TASK_STATUS.IN_PROGRESS, TASK_STATUS.DONE] }
             }
         },
         {
@@ -466,10 +555,27 @@ const getFreelancerWorkloadService = async (freelancerId) => {
                 },
                 completedTasks: {
                     $sum: {
-                        $cond: [{ $eq: ["$status", "done"] }, 1, 0]
+                        $cond: [{ $eq: ["$status", TASK_STATUS.DONE] }, 1, 0]
                     }
                 },
 
+                overdueTasks: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $ne: ["$dueDate", null] },
+                                    { $lt: ["$dueDate", new Date()] },
+                                    { $in: ["$status", [TASK_STATUS.TODO, TASK_STATUS.IN_PROGRESS]] }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+
+                totalEffort: { $sum: "$effortPoint" },
                 totalEstimated: { $sum: "$estimatedHours" },
                 totalActual: { $sum: "$actualHours" }
             }
@@ -480,8 +586,110 @@ const getFreelancerWorkloadService = async (freelancerId) => {
         totalTasks: 0,
         activeTasks: 0,
         completedTasks: 0,
+        overdueTasks: 0,
+        totalEffort: 0,
         totalEstimated: 0,
         totalActual: 0
+    }
+}
+
+const getOverdueOpenTasksService = async (userId, role, query = {}) => {
+    if (!role) {
+        throw new AppError("Unauthorized", 401)
+    }
+
+    const page = Math.max(Number(query.page) || 1, 1)
+    const limit = Math.max(Number(query.limit) || 10, 1)
+    const skip = (page - 1) * limit
+
+    const match = {
+        dueDate: { $ne: null, $lt: new Date() },
+        status: { $in: [TASK_STATUS.TODO, TASK_STATUS.IN_PROGRESS] }
+    }
+
+    if (query.projectId) {
+        if (!mongoose.Types.ObjectId.isValid(query.projectId)) {
+            throw new AppError("Invalid Project ID", 400)
+        }
+        match.projectId = new mongoose.Types.ObjectId(query.projectId)
+    }
+
+    if (query.contractId) {
+        if (!mongoose.Types.ObjectId.isValid(query.contractId)) {
+            throw new AppError("Invalid Contract ID", 400)
+        }
+        match.contractId = new mongoose.Types.ObjectId(query.contractId)
+    }
+
+    if (query.assigneeId) {
+        if (!mongoose.Types.ObjectId.isValid(query.assigneeId)) {
+            throw new AppError("Invalid Assignee ID", 400)
+        }
+        match.assigneeId = new mongoose.Types.ObjectId(query.assigneeId)
+    }
+
+    if (role === "buyer") {
+        const projects = await Project.find({ buyerId: userId }).select("_id").lean()
+        const projectIds = projects.map(project => project._id)
+
+        if (!projectIds.length) {
+            return {
+                data: [],
+                pagination: {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0
+                }
+            }
+        }
+
+        match.projectId = match.projectId
+            ? { $in: projectIds.filter(id => String(id) === String(match.projectId)) }
+            : { $in: projectIds }
+    }
+
+    if (role === "freelancer") {
+        const contracts = await Contract.find({
+            $or: [{ freelancerId: userId }, { memberIds: userId }]
+        }).select("_id").lean()
+
+        const contractIds = contracts.map(contract => contract._id)
+
+        if (!contractIds.length) {
+            return {
+                data: [],
+                pagination: {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0
+                }
+            }
+        }
+
+        match.contractId = match.contractId
+            ? { $in: contractIds.filter(id => String(id) === String(match.contractId)) }
+            : { $in: contractIds }
+    }
+
+    const [tasks, total] = await Promise.all([
+        Task.find(match)
+            .sort({ dueDate: 1, createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        Task.countDocuments(match)
+    ])
+
+    return {
+        data: tasks,
+        pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
     }
 }
 
@@ -494,5 +702,6 @@ module.exports = {
     updateTaskStatusService,
     getTaskStatsByProjectService,
     getProjectProgressService,
-    getFreelancerWorkloadService
+    getFreelancerWorkloadService,
+    getOverdueOpenTasksService
 }

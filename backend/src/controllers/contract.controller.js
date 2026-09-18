@@ -5,10 +5,12 @@ const {createContractService,
         updateContractStatusService,
         payContractService,
         getContractBalanceService,
+        getContractProgressFinanceService,
         getContractStatsService,
         getFreelancerStatsService,
         getProjectSummaryService,
-        getOverviewService
+        getOverviewService,
+        getProjectsOverOrderBudgetService
 } = require("../services/contract.service")
 const {formatContractSummary, formatContractDetail} = require("../utils/formatContract")
 
@@ -151,6 +153,24 @@ const getContractBalance = async(req, res) => {
     }
 }
 
+const getContractProgressFinance = async (req, res) => {
+    try {
+        const userId = req.user.userID
+        const contractId = req.params.id
+
+        const summary = await getContractProgressFinanceService(contractId, userId)
+
+        res.status(200).json({
+            message: "Get contract progress finance successfully",
+            data: summary
+        })
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            message: error.message
+        })
+    }
+}
+
 const getContractStats = async (req, res) => {
     try {
         const stats = await getContractStatsService()
@@ -171,7 +191,11 @@ const getFreelancerStats = async (req, res) => {
         
         const freelancerId = req.params.id
 
-        const stats = await getFreelancerStatsService(freelancerId)
+        const stats = await getFreelancerStatsService(
+            freelancerId,
+            req.user.userID,
+            req.user.role
+        )
 
         res.status(200).json({
             message: "Get freelancer stats successfully",
@@ -220,6 +244,31 @@ const getOverview = async (req, res) => {
     }
 }
 
+const getProjectsOverOrderBudget = async (req, res) => {
+    try {
+        const userId = req.user.userID
+        const role = req.user.role
+        const { page = 1, limit = 10 } = req.query
+
+        const result = await getProjectsOverOrderBudgetService(
+            userId,
+            role,
+            Number(page),
+            Number(limit)
+        )
+
+        res.status(200).json({
+            message: "Get projects over order budget successfully",
+            data: result.data,
+            pagination: result.pagination
+        })
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            message: error.message
+        })
+    }
+}
+
 
 module.exports = {createContract,
                     getContractById,
@@ -228,8 +277,10 @@ module.exports = {createContract,
                     updateContractStatus,
                     payContract,
                     getContractBalance,
+                    getContractProgressFinance,
                     getContractStats,
                     getFreelancerStats,
                     getProjectSummary,
-                    getOverview
+                    getOverview,
+                    getProjectsOverOrderBudget
                 }

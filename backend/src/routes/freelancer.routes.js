@@ -1,13 +1,14 @@
 const express = require("express");
 const {createFreelancer, getFreelancerById, getMyFreelancer, updateMyFreelancer} = require("../controllers/freelancer.controller")
 const { authMiddleware } = require("../middlewares/auth.middleware.js")
+const {roleMiddleware} = require("../middlewares/role.middleware.js")
 const {createFreelancerSchema, updateFreelancerSchema} = require("../schemas/freelancer.schema.js")
 const {validate} = require("../middlewares/validate.middleware")
 
 
 const router = express.Router();
 
-router.post("/", authMiddleware, validate(createFreelancerSchema), createFreelancer)
+router.post("/", authMiddleware, roleMiddleware(["buyer"]), validate(createFreelancerSchema), createFreelancer)
 router.get("/me", authMiddleware, getMyFreelancer)
 router.patch("/me", authMiddleware, validate(updateFreelancerSchema), updateMyFreelancer)
 

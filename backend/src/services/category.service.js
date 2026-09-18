@@ -1,5 +1,6 @@
 const mongoose = require("mongoose")
 const Category = require("../models/category")
+const Gig = require("../models/gig")
 const AppError = require("../utils/AppError")
 
 const createCategoryService = async(categoryName, description) => {
@@ -20,7 +21,32 @@ const createCategoryService = async(categoryName, description) => {
 }
 
 const getCategoriesService = async() => {
-    const categories = await Category.find({}).sort({ name: 1 }).lean()
+    const categories = await Category.aggregate([
+        {
+            $lookup: {
+                from: Gig.collection.name,
+                let: { categoryId: "$_id" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: { $eq: ["$category._id", "$$categoryId"] }
+                        }
+                    },
+                    { $count: "count" }
+                ],
+                as: "gigStats"
+            }
+        },
+        {
+            $set: {
+                gigCount: {
+                    $ifNull: [{ $arrayElemAt: ["$gigStats.count", 0] }, 0]
+                }
+            }
+        },
+        { $project: { gigStats: 0 } },
+        { $sort: { name: 1 } }
+    ])
 
     return categories
 }

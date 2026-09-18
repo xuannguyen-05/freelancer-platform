@@ -20,6 +20,13 @@ const contractSchema = new mongoose.Schema(
       required: true,
     },
 
+    memberIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
     type: {
       type: String,
       enum: ["fixed", "hourly"],
@@ -64,6 +71,7 @@ const contractSchema = new mongoose.Schema(
 );
 
 contractSchema.index({ projectId: 1, freelancerId: 1, status: 1 });
+contractSchema.index({ projectId: 1, memberIds: 1 });
 
 const Contract = mongoose.model("Contract", contractSchema);
 
