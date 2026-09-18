@@ -27,7 +27,13 @@ const { createTaskSchema } = require("../schemas/task.schema");
 
 const router = express.Router();
 
-router.post("/", authMiddleware, validate(createProjectSchema), createProject);
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(["buyer"]),
+  validate(createProjectSchema),
+  createProject,
+);
 
 router.get("/my", authMiddleware, getMyProjects);
 
@@ -39,10 +45,6 @@ router.patch(
   validate(updateProjectSchema),
   updateProject,
 );
-
-// router.patch("/:id/accept", authMiddleware, acceptProject)
-
-// router.patch("/:id/deliver", authMiddleware, deliverProject)
 
 
 /**

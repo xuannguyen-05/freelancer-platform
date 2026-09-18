@@ -2,6 +2,7 @@ const mongoose = require("mongoose")
 const Project = require("../models/project")
 const Order = require("../models/order")
 const Task = require("../models/task")
+const Contract = require("../models/contract")
 const { PROJECT_STATUS } = require("../constants/projectStatus")
 const { ORDER_STATUS } = require("../constants/orderStatus")
 const AppError = require("../utils/AppError")
@@ -36,7 +37,6 @@ const createProjectService = async(orderId, userId, description) => {
     const project = await Project.create({
         orderId,
         buyerId: order.buyer._id,
-        freelancerId: order.freelancer._id,
         title: order.gig.title,
         description: description || "",
         status: PROJECT_STATUS.PLANNING
@@ -58,7 +58,10 @@ const getProjectByIdService = async(projectId, userId) => {
     }
 
     const isBuyer = String(project.buyerId) === String(userId)
-    const isFreelancer = String(project.freelancerId) === String(userId)
+    const isFreelancer = await Contract.exists({
+        projectId: project._id,
+        $or: [{ freelancerId: userId }, { memberIds: userId }]
+    })
 
     if (!isBuyer && !isFreelancer) {
         throw new AppError("You are not allowed to access this project", 403)
@@ -77,7 +80,11 @@ const getMyProjectsService = async (userId, role, page, limit) => {
     if (role === "buyer") {
         filter = { buyerId: userId }
     } else if (role === "freelancer") {
-        filter = { freelancerId: userId }
+        const contracts = await Contract.find({
+            $or: [{ freelancerId: userId }, { memberIds: userId }]
+        }).select("projectId").lean()
+        const projectIds = contracts.map(c => c.projectId)
+        filter = { _id: { $in: projectIds } }
     } else {
         throw new AppError("Invalid role", 400)
     }
@@ -138,62 +145,6 @@ const updateProjectService = async(projectId, userId, data) => {
     return updated
 }
 
-// const acceptProjectService = async(projectId, userId) => {
-
-//     if (!mongoose.Types.ObjectId.isValid(projectId)) {
-//         throw new AppError("Invalid Project ID", 400)
-//     }
-
-//     const project = await Project.findById(projectId)
-
-//     if(!project){
-//         throw new AppError("Project Not Found", 404)
-//     }
-
-//     const isFreelancer = String(project.freelancerId) === String(userId)
-
-//     if (!isFreelancer) {
-//         throw new AppError("Only the freelancer can accept this project", 403)
-//     }
-    
-//     if (project.status !== PROJECT_STATUS.PLANNING) {
-//         throw new AppError("Cannot Update Project Now", 400)
-//     }
-
-//     project.status = PROJECT_STATUS.IN_PROGRESS
-//     await project.save()
-
-//     return project.toObject()
-// }
-
-// const deliverProjectService = async(projectId, userId) => {
-
-//     if (!mongoose.Types.ObjectId.isValid(projectId)) {
-//         throw new AppError("Invalid Project ID", 400)
-//     }
-
-//     const project = await Project.findById(projectId)
-
-//     if(!project){
-//         throw new AppError("Project Not Found", 404)
-//     }
-
-//     const isFreelancer = String(project.freelancerId) === String(userId)
-
-//     if (!isFreelancer) {
-//         throw new AppError("Only the freelancer can deliver this project", 403)
-//     }
-    
-//     if (project.status !== PROJECT_STATUS.IN_PROGRESS) {
-//         throw new AppError("Cannot Update Project Now", 400)
-//     }
-
-//     project.status = PROJECT_STATUS.DELIVERED
-//     await project.save()
-
-//     return project.toObject()
-// }
-
 const completeProjectService = async(projectId, userId) => {
 
     if (!mongoose.Types.ObjectId.isValid(projectId)) {
@@ -239,7 +190,10 @@ const cancelProjectService = async(projectId, userId) => {
     }
 
     const isBuyer = String(project.buyerId) === String(userId)
-    const isFreelancer = String(project.freelancerId) === String(userId)
+    const isFreelancer = await Contract.exists({
+        projectId: project._id,
+        $or: [{ freelancerId: userId }, { memberIds: userId }]
+    })
 
     if (!isBuyer && !isFreelancer) {
         throw new AppError("Only participants can cancel this project", 403)

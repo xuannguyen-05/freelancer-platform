@@ -6,14 +6,14 @@ const {
     updateTaskStatusService,
     getTaskStatsByProjectService,
     getProjectProgressService,
-    getFreelancerWorkloadService
+    getFreelancerWorkloadService,
+    getOverdueOpenTasksService
 } = require("../services/task.service")
-const {formatTaskSummary, formatTaskDetail} = require("../utils/formatTask")
+const { formatTaskSummary, formatTaskDetail } = require("../utils/formatTask")
 
-const createTask = async(req, res) => {
+const createTask = async (req, res) => {
     try {
         const userId = req.user.userID
-
         const projectId = req.params.projectId
 
         const task = await createTaskService(projectId, userId, req.body)
@@ -29,19 +29,23 @@ const createTask = async(req, res) => {
     }
 }
 
-const getTasksByProject = async(req, res) => {
+const getTasksByProject = async (req, res) => {
     try {
         const userId = req.user.userID
-
         const projectId = req.params.projectId
-
         const { page = 1, limit = 10 } = req.query
 
-        const tasks = await getTasksByProjectService(projectId, userId, Number(page), Number(limit))
+        const tasks = await getTasksByProjectService(
+            projectId,
+            userId,
+            Number(page),
+            Number(limit)
+        )
 
         res.status(200).json({
             message: "Get tasks successfully",
-            data: tasks.map(formatTaskSummary)
+            data: tasks.data.map(formatTaskSummary),
+            pagination: tasks.pagination
         })
     } catch (error) {
         res.status(error.statusCode || 500).json({
@@ -50,10 +54,9 @@ const getTasksByProject = async(req, res) => {
     }
 }
 
-const getTaskById = async(req, res) => {
+const getTaskById = async (req, res) => {
     try {
         const userId = req.user.userID
-
         const taskId = req.params.id
 
         const task = await getTaskByIdService(taskId, userId)
@@ -69,10 +72,9 @@ const getTaskById = async(req, res) => {
     }
 }
 
-const updateTask = async(req, res) => {
+const updateTask = async (req, res) => {
     try {
         const userId = req.user.userID
-
         const taskId = req.params.id
 
         const task = await updateTaskService(taskId, userId, req.body)
@@ -88,10 +90,9 @@ const updateTask = async(req, res) => {
     }
 }
 
-const updateTaskStatus = async(req, res) => {
+const updateTaskStatus = async (req, res) => {
     try {
         const userId = req.user.userID
-
         const taskId = req.params.id
 
         const task = await updateTaskStatusService(taskId, userId, req.body)
@@ -107,12 +108,9 @@ const updateTaskStatus = async(req, res) => {
     }
 }
 
-
-const getTaskStatsByProject = async(req, res) => {
+const getTaskStatsByProject = async (req, res) => {
     try {
-
         const userId = req.user.userID
-
         const projectId = req.params.projectId
 
         const stats = await getTaskStatsByProjectService(projectId, userId)
@@ -128,11 +126,9 @@ const getTaskStatsByProject = async(req, res) => {
     }
 }
 
-const getProjectProgress = async(req, res) => {
+const getProjectProgress = async (req, res) => {
     try {
-
         const userId = req.user.userID
-
         const projectId = req.params.projectId
 
         const progress = await getProjectProgressService(projectId, userId)
@@ -148,12 +144,15 @@ const getProjectProgress = async(req, res) => {
     }
 }
 
-const getFreelancerWorkload = async(req, res) => {
+const getFreelancerWorkload = async (req, res) => {
     try {
-
         const freelancerId = req.params.id
 
-        const workload = await getFreelancerWorkloadService(freelancerId)
+        const workload = await getFreelancerWorkloadService(
+            freelancerId,
+            req.user.userID,
+            req.user.role
+        )
 
         res.status(200).json({
             message: "Get freelancer workload successfully",
@@ -166,6 +165,24 @@ const getFreelancerWorkload = async(req, res) => {
     }
 }
 
+const getOverdueOpenTasks = async (req, res) => {
+    try {
+        const userId = req.user.userID
+        const role = req.user.role
+
+        const result = await getOverdueOpenTasksService(userId, role, req.query)
+
+        res.status(200).json({
+            message: "Get overdue open tasks successfully",
+            data: result.data.map(formatTaskSummary),
+            pagination: result.pagination
+        })
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            message: error.message
+        })
+    }
+}
 
 module.exports = {
     createTask,
@@ -175,5 +192,6 @@ module.exports = {
     updateTaskStatus,
     getTaskStatsByProject,
     getProjectProgress,
-    getFreelancerWorkload
+    getFreelancerWorkload,
+    getOverdueOpenTasks
 }

@@ -12,10 +12,12 @@ const {
   updateContractStatus,
   payContract,
   getContractBalance,
+  getContractProgressFinance,
   getContractStats,
   getFreelancerStats,
   getProjectSummary,
   getOverview,
+  getProjectsOverOrderBudget,
 } = require("../controllers/contract.controller");
 
 const {
@@ -68,7 +70,12 @@ router.get(
  *       200:
  *         description: Get contracts overview successfully
  */
-router.get("/overview", authMiddleware, roleMiddleware(["admin"]), getOverview);
+router.get(
+  "/overview",
+  authMiddleware,
+  roleMiddleware(["admin"]),
+  getOverview,
+);
 
 /**
  * @swagger
@@ -91,6 +98,7 @@ router.get("/overview", authMiddleware, roleMiddleware(["admin"]), getOverview);
 router.get(
   "/freelancer/:id/stats",
   authMiddleware,
+  roleMiddleware(["admin", "freelancer"]),
   getFreelancerStats
 );
 
@@ -111,6 +119,29 @@ router.get(
  *         description: Get project financial summary successfully
  */
 router.get("/project/:projectId/summary", authMiddleware, getProjectSummary);
+
+/**
+ * @swagger
+ * /api/contracts/projects-over-order:
+ *   get:
+ *     summary: Query projects where total contract budget is greater than order total amount
+ *     tags: [Statistics]
+ *     security:
+ *      - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: Get projects over order budget successfully
+ */
+router.get("/projects-over-order", authMiddleware, getProjectsOverOrderBudget);
 
 /**
  * @swagger
@@ -199,6 +230,26 @@ router.post(
  *         description: Get contract balance successfully
  */
 router.get("/:id/balance", authMiddleware, getContractBalance);
+
+/**
+ * @swagger
+ * /api/contracts/{id}/progress-finance:
+ *   get:
+ *     summary: Get combined progress and finance summary of a contract
+ *     tags: [Statistics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Get contract progress finance successfully
+ */
+router.get("/:id/progress-finance", authMiddleware, getContractProgressFinance);
 
 router.get("/detail/:id", authMiddleware, getContractById);
 

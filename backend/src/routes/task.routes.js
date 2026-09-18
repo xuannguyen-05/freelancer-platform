@@ -1,16 +1,17 @@
 const express = require("express");
 
 const { authMiddleware } = require("../middlewares/auth.middleware");
+const { roleMiddleware } = require("../middlewares/role.middleware");
 const { validate } = require("../middlewares/validate.middleware");
 
 const {
   getTaskById,
   updateTask,
   updateTaskStatus,
-  updateTaskProgress,
   getTaskStatsByProject,
   getProjectProgress,
-  getFreelancerWorkload
+  getFreelancerWorkload,
+  getOverdueOpenTasks
 } = require("../controllers/task.controller");
 
 const {
@@ -18,6 +19,7 @@ const {
   updateTaskSchema,
   updateTaskStatusSchema,
 } = require("../schemas/task.schema");
+
 
 const router = express.Router();
 
@@ -73,11 +75,51 @@ router.get("/project/:projectId/progress", authMiddleware, getProjectProgress)
  *       200:
  *         description: Get freelancer workload successfully
  */
-router.get("/freelancer/:id/workload", authMiddleware, getFreelancerWorkload)
+router.get("/freelancer/:id/workload", authMiddleware, roleMiddleware(["admin", "freelancer"]), getFreelancerWorkload)
+
+/**
+ * @swagger
+ * /api/tasks/overdue-open:
+ *   get:
+ *     summary: Query overdue tasks that are not finished
+ *     tags: [Statistics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: projectId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: contractId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: assigneeId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: Get overdue open tasks successfully
+ */
+router.get("/overdue-open", authMiddleware, getOverdueOpenTasks)
 
 
 router.get("/:id", authMiddleware, getTaskById);
-router.patch("/:id", authMiddleware, validate(updateTaskSchema), updateTask);
+router.patch(
+  "/:id",
+  authMiddleware,
+  validate(updateTaskSchema),
+  updateTask,
+);
 
 /**
  * @swagger

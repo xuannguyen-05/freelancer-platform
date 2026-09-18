@@ -7,6 +7,12 @@ const taskSchema = new mongoose.Schema({
         required: true,
         index: true
     },
+    contractId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Contract",
+        required: true,
+        index: true
+    },
     parentTaskId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Task",
@@ -40,18 +46,34 @@ const taskSchema = new mongoose.Schema({
         min: 0,
         default: 0
     },
+    effortPoint: {
+        type: Number,
+        min: 1,
+        max: 13,
+        default: 3
+    },
     actualHours: {
         type: Number,
         min: 0,
         default: 0
     },
+    dueDate: {
+        type: Date,
+        default: null,
+        index: true
+    },
     startedAt: {
+        type: Date,
+        default: null
+    },
+    completedAt: {
         type: Date,
         default: null
     }
 }, { timestamps: true });
 
 taskSchema.index({ projectId: 1, status: 1 });
+taskSchema.index({ contractId: 1, status: 1 });
 
 const Task = mongoose.model("Task", taskSchema);
 
