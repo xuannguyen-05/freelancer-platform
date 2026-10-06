@@ -24,7 +24,7 @@ export default function AdminCategoriesPage() {
   // Modal State
   const [modalOpen, setModalOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
-  const [formData, setFormData] = useState({ name: '', description: '' })
+  const [formData, setFormData] = useState({ categoryName: '', description: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Delete State
@@ -52,30 +52,37 @@ export default function AdminCategoriesPage() {
 
   const openCreateModal = () => {
     setEditingCategory(null)
-    setFormData({ name: '', description: '' })
+    setFormData({ categoryName: '', description: '' })
     setModalOpen(true)
   }
 
   const openEditModal = (cat) => {
     setEditingCategory(cat)
-    setFormData({ name: cat.name || '', description: cat.description || '' })
+    setFormData({
+      categoryName: cat.categoryName || cat.name || '',
+      description: cat.description || ''
+    })
     setModalOpen(true)
   }
 
   const handleFormSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.name.trim()) {
+    if (!formData.categoryName.trim()) {
       toast.error(t('admin.categories.nameRequired', 'Tên danh mục không được để trống'))
       return
     }
 
     setIsSubmitting(true)
     try {
+      const payload = {
+        categoryName: formData.categoryName.trim(),
+        description: formData.description?.trim() || ''
+      }
       if (editingCategory) {
-        await categoryService.updateCategory(editingCategory._id, formData)
+        await categoryService.updateCategory(editingCategory._id, payload)
         toast.success(t('admin.categories.updateSuccess', 'Cập nhật danh mục thành công!'))
       } else {
-        await categoryService.createCategory(formData)
+        await categoryService.createCategory(payload)
         toast.success(t('admin.categories.createSuccess', 'Tạo danh mục mới thành công!'))
       }
       setModalOpen(false)
@@ -116,7 +123,8 @@ export default function AdminCategoriesPage() {
 
   const filteredCategories = categories.filter((c) => {
     const term = search.toLowerCase()
-    return c.name?.toLowerCase().includes(term) || c.description?.toLowerCase().includes(term)
+    const name = (c.categoryName || c.name || '').toLowerCase()
+    return name.includes(term) || c.description?.toLowerCase().includes(term)
   })
 
   return (
@@ -199,7 +207,7 @@ export default function AdminCategoriesPage() {
                           <FolderTree className="h-4 w-4" />
                         </div>
                         <span className="font-bold text-slate-900 dark:text-white">
-                          {cat.name}
+                          {cat.categoryName || cat.name}
                         </span>
                       </div>
                     </td>
@@ -259,8 +267,8 @@ export default function AdminCategoriesPage() {
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.categoryName}
+                  onChange={(e) => setFormData({ ...formData, categoryName: e.target.value })}
                   placeholder={t('admin.categories.namePlaceholder', 'Ví dụ: Lập trình & Công nghệ')}
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-primary-500 text-slate-900 dark:text-slate-100"
                   required
@@ -313,7 +321,7 @@ export default function AdminCategoriesPage() {
                 {t('admin.categories.deleteModalTitle', 'Xác nhận xóa danh mục')}
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                {t('admin.categories.deleteModalDesc', { name: categoryToDelete.name, defaultValue: `Bạn có chắc chắn muốn xóa danh mục "${categoryToDelete.name}"? Thao tác này không thể hoàn tác.` })}
+                {t('admin.categories.deleteModalDesc', { name: categoryToDelete.categoryName || categoryToDelete.name, defaultValue: `Bạn có chắc chắn muốn xóa danh mục "${categoryToDelete.categoryName || categoryToDelete.name}"? Thao tác này không thể hoàn tác.` })}
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">
