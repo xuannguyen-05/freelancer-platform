@@ -12,12 +12,22 @@ export const categoryService = {
   },
 
   createCategory: async (data) => {
-    const response = await axiosInstance.post('/categories', data)
+    const payload = {
+      categoryName: data.categoryName ?? data.name,
+      description: data.description
+    }
+    const response = await axiosInstance.post('/categories', payload)
     return response.data
   },
 
   updateCategory: async (id, data) => {
-    const response = await axiosInstance.patch(`/categories/${id}`, data)
+    const payload = {
+      ...(data.categoryName !== undefined || data.name !== undefined
+        ? { categoryName: data.categoryName ?? data.name }
+        : {}),
+      ...(data.description !== undefined ? { description: data.description } : {})
+    }
+    const response = await axiosInstance.patch(`/categories/${id}`, payload)
     return response.data
   },
 
