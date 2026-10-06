@@ -21,7 +21,6 @@ Workly provides an end-to-end ecosystem for digital freelance work:
 * **For Administrators:** Oversee platform integrity via a dedicated Admin Dashboard, review and approve/reject "Become a Freelancer" applications, manage marketplace categories and skill taxonomies, and inspect platform analytics.
 
 ---
-
 ## ✨ Features
 
 ### Authentication & Security
