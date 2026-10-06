@@ -15,6 +15,10 @@ const normalizeUploadField = (field, folder = "workly/general") => {
         }
         
         req.file.cloudinary = uploadResult;
+        delete req.body.image;
+      } else if (req.body.image && !req.body[field]) {
+        req.body[field] = req.body.image;
+        delete req.body.image;
       }
 
       // Parse JSON strings that are sent via multipart/form-data

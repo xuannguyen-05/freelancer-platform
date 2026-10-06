@@ -55,7 +55,7 @@ export default function GigFormModal({
   const [packages, setPackages] = useState([
     {
       title: 'Standard',
-      description: 'Gói tiêu chuẩn chất lượng cao hoàn thiện đầy đủ',
+      description: t('gig.defaultPkgDesc', 'Gói tiêu chuẩn chất lượng cao hoàn thiện đầy đủ'),
       price: 50,
       deliveryDay: 3,
       revision: 2,
@@ -138,7 +138,7 @@ export default function GigFormModal({
       setPackages([
         {
           title: 'Standard',
-          description: 'Gói tiêu chuẩn chất lượng cao hoàn thiện đầy đủ',
+          description: t('gig.defaultPkgDesc', 'Gói tiêu chuẩn chất lượng cao hoàn thiện đầy đủ'),
           price: 50,
           deliveryDay: 3,
           revision: 2,
@@ -249,19 +249,19 @@ export default function GigFormModal({
         if (!pkg.title || !pkg.title.trim()) {
           setCurrentTab(2)
           setActivePackageIndex(i)
-          setError(`Gói #${i + 1}: Vui lòng nhập tên gói`)
+          setError(t('gig.pkgTitleRequired', 'Gói #{{index}}: Vui lòng nhập tên gói', { index: i + 1 }))
           return
         }
         if (!pkg.price || Number(pkg.price) <= 0) {
           setCurrentTab(2)
           setActivePackageIndex(i)
-          setError(`Gói #${i + 1}: Giá dịch vụ phải lớn hơn 0`)
+          setError(t('gig.pkgPriceInvalid', 'Gói #{{index}}: Giá dịch vụ phải lớn hơn 0', { index: i + 1 }))
           return
         }
         if (!pkg.deliveryDay || Number(pkg.deliveryDay) < 1) {
           setCurrentTab(2)
           setActivePackageIndex(i)
-          setError(`Gói #${i + 1}: Ngày giao hàng phải từ 1 ngày trở lên`)
+          setError(t('gig.pkgDeliveryInvalid', 'Gói #{{index}}: Ngày giao hàng phải từ 1 ngày trở lên', { index: i + 1 }))
           return
         }
       }
@@ -387,11 +387,11 @@ export default function GigFormModal({
                   className="w-full h-12 text-sm rounded-xl px-3"
                 >
                   <option value="" disabled>
-                    {loadingCategories ? 'Đang tải danh mục...' : t('gig.selectCategory', 'Chọn danh mục phù hợp')}
+                    {loadingCategories ? t('gig.loadingCategories', 'Đang tải danh mục...') : t('gig.selectCategory', 'Chọn danh mục phù hợp')}
                   </option>
                   {categories.map((cat) => (
                     <option key={cat._id || cat.id} value={cat._id || cat.id}>
-                      {cat.name}
+                      {cat.categoryName || cat.name}
                     </option>
                   ))}
                 </Select>
@@ -488,7 +488,7 @@ export default function GigFormModal({
                         setImgError(false)
                       }}
                       className="absolute top-3 right-3 p-2 rounded-full bg-black/75 text-white hover:bg-black transition-colors shadow-lg cursor-pointer"
-                      title="Xóa ảnh này"
+                      title={t('gig.deleteImageTitle', 'Xóa ảnh này')}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -558,7 +558,7 @@ export default function GigFormModal({
                         : 'bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
-                    <span>{pkg.title || `Gói ${idx + 1}`}</span>
+                    <span>{pkg.title || t('gig.packageIndex', 'Gói {{index}}', { index: idx + 1 })}</span>
                     <span className="opacity-80 font-normal">
                       ({formatCurrency(pkg.price || 0)})
                     </span>
@@ -653,7 +653,7 @@ export default function GigFormModal({
                         onChange={(e) =>
                           handlePackageChange(activePackageIndex, 'revision', e.target.value)
                         }
-                        placeholder="2 (0 = không giới hạn)"
+                        placeholder={t('gig.revisionsPlaceholder', '2 (0 = không giới hạn)')}
                         className="pl-9 w-full h-11 text-sm rounded-xl font-medium"
                       />
                     </div>
@@ -670,7 +670,7 @@ export default function GigFormModal({
                     onChange={(e) =>
                       handlePackageChange(activePackageIndex, 'description', e.target.value)
                     }
-                    placeholder="Mô tả cụ thể những gì khách hàng sẽ nhận được trong gói dịch vụ này..."
+                    placeholder={t('gig.packageDescPlaceholder', 'Mô tả cụ thể những gì khách hàng sẽ nhận được trong gói dịch vụ này...')}
                     rows={3}
                     className="w-full text-sm leading-relaxed rounded-xl p-3"
                   />

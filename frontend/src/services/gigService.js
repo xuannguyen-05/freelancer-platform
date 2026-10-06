@@ -17,12 +17,18 @@ export const gigService = {
   },
 
   createGig: async (data) => {
-    const response = await axiosInstance.post('/gigs', data)
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
+    const response = await axiosInstance.post('/gigs', data, isFormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {})
     return response.data
   },
 
   updateGig: async (id, data) => {
-    const response = await axiosInstance.patch(`/gigs/${id}`, data)
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
+    const response = await axiosInstance.patch(`/gigs/${id}`, data, isFormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {})
     return response.data
   },
 

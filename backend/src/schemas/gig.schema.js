@@ -24,20 +24,34 @@ const createGigSchema = z.object({
   title: z.string().trim().min(1),
   description: z.string().optional(),
   img_url: imageSchema.optional(),
+  image: imageSchema.optional(),
   img_public_id: z.string().optional(),
   categoryID: objectIdSchema,
   tags: tagsSchema,
   packages: z.array(packageSchema).min(1).max(3)
-}).strict()
+}).transform(data => {
+  if (data.image && !data.img_url) {
+    data.img_url = data.image
+  }
+  delete data.image
+  return data
+})
 
 const updateGigSchema = z.object({
   title: z.string().trim().min(1).optional(),
   description: z.string().optional(),
   img_url: imageSchema.optional(),
+  image: imageSchema.optional(),
   img_public_id: z.string().optional(),
   categoryID: objectIdSchema.optional(),
   tags: tagsSchema
-}).strict().refine((data) => Object.keys(data).length > 0, {
+}).transform(data => {
+  if (data.image && !data.img_url) {
+    data.img_url = data.image
+  }
+  delete data.image
+  return data
+}).refine((data) => Object.keys(data).length > 0, {
   message: "At least one field must be provided"
 })
 
