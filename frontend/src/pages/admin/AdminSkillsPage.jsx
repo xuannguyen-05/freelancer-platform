@@ -29,7 +29,7 @@ export default function AdminSkillsPage() {
   // Create / Edit Modal
   const [modalOpen, setModalOpen] = useState(false)
   const [editingSkill, setEditingSkill] = useState(null)
-  const [formData, setFormData] = useState({ name: '', categoryId: '' })
+  const [formData, setFormData] = useState({ skillName: '', categoryId: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Delete Modal
@@ -59,23 +59,32 @@ export default function AdminSkillsPage() {
 
   const openCreateModal = () => {
     setEditingSkill(null)
-    setFormData({ name: '', categoryId: categories[0]?._id || '' })
+    const defaultCatId = selectedCategory !== 'all' ? selectedCategory : (categories[0]?._id || '')
+    setFormData({ skillName: '', categoryId: defaultCatId })
     setModalOpen(true)
   }
 
   const openEditModal = (skill) => {
     setEditingSkill(skill)
+    const catId = typeof skill.categoryId === 'object' && skill.categoryId !== null
+      ? (skill.categoryId._id || '')
+      : (skill.categoryId || '')
     setFormData({
-      name: skill.name || '',
-      categoryId: skill.categoryId?._id || skill.categoryId || ''
+      skillName: skill.skillName || skill.name || '',
+      categoryId: catId || (categories[0]?._id || '')
     })
     setModalOpen(true)
   }
 
   const handleFormSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.name.trim()) {
+    const trimmedName = formData.skillName.trim()
+    if (!trimmedName) {
       toast.error(t('admin.skills.nameRequired', 'Tên kỹ năng không được để trống'))
+      return
+    }
+    if (trimmedName.length < 2) {
+      toast.error(t('admin.skills.nameTooShort', 'Tên kỹ năng phải có ít nhất 2 ký tự'))
       return
     }
     if (!formData.categoryId) {
@@ -85,11 +94,15 @@ export default function AdminSkillsPage() {
 
     setIsSubmitting(true)
     try {
+      const payload = {
+        skillName: trimmedName,
+        categoryId: formData.categoryId
+      }
       if (editingSkill) {
-        await skillService.updateSkill(editingSkill._id, formData)
+        await skillService.updateSkill(editingSkill._id, payload)
         toast.success(t('admin.skills.updateSuccess', 'Cập nhật kỹ năng thành công!'))
       } else {
-        await skillService.createSkill(formData)
+        await skillService.createSkill(payload)
         toast.success(t('admin.skills.createSuccess', 'Tạo kỹ năng mới thành công!'))
       }
       setModalOpen(false)
@@ -127,8 +140,9 @@ export default function AdminSkillsPage() {
   }
 
   const filteredSkills = skills.filter((s) => {
-    const matchesSearch = s.name?.toLowerCase().includes(search.toLowerCase())
-    const catId = s.categoryId?._id || s.categoryId
+    const name = s.skillName || s.name || ''
+    const matchesSearch = name.toLowerCase().includes(search.toLowerCase())
+    const catId = typeof s.categoryId === 'object' && s.categoryId !== null ? s.categoryId._id : s.categoryId
     const matchesCategory = selectedCategory === 'all' || String(catId) === String(selectedCategory)
     return matchesSearch && matchesCategory
   })
@@ -190,7 +204,7 @@ export default function AdminSkillsPage() {
             <option value="all">{t('admin.skills.filterCategory', 'Tất cả danh mục')}</option>
             {categories.map((c) => (
               <option key={c._id} value={c._id}>
-                {c.name}
+                {c.categoryName || c.name}
               </option>
             ))}
           </select>
@@ -227,13 +241,13 @@ export default function AdminSkillsPage() {
                       <div className="flex items-center gap-2.5">
                         <span className="h-2 w-2 rounded-full bg-primary-500" />
                         <span className="font-bold text-slate-900 dark:text-white capitalize">
-                          {sk.name}
+                          {sk.skillName || sk.name}
                         </span>
                       </div>
                     </td>
                     <td className="py-3.5 px-5">
                       <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                        {sk.categoryId?.name || t('admin.skills.unassigned', 'Chưa gán')}
+                        {sk.categoryId?.categoryName || sk.categoryId?.name || t('admin.skills.unassigned', 'Chưa gán')}
                       </span>
                     </td>
                     <td className="py-3.5 px-5 text-right whitespace-nowrap">
@@ -289,8 +303,8 @@ export default function AdminSkillsPage() {
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.skillName}
+                  onChange={(e) => setFormData({ ...formData, skillName: e.target.value })}
                   placeholder={t('admin.skills.namePlaceholder', 'Ví dụ: React.js, UI/UX Design...')}
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-primary-500 text-slate-900 dark:text-slate-100"
                   required
@@ -312,7 +326,7 @@ export default function AdminSkillsPage() {
                   </option>
                   {categories.map((c) => (
                     <option key={c._id} value={c._id}>
-                      {c.name}
+                      {c.categoryName || c.name}
                     </option>
                   ))}
                 </select>
@@ -351,7 +365,7 @@ export default function AdminSkillsPage() {
                 {t('admin.skills.deleteModalTitle', 'Xác nhận xóa kỹ năng')}
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                {t('admin.skills.deleteModalDesc', { name: skillToDelete.name, defaultValue: `Bạn có chắc chắn muốn xóa kỹ năng "${skillToDelete.name}"? Thao tác này không thể hoàn tác.` })}
+                {t('admin.skills.deleteModalDesc', { name: skillToDelete.skillName || skillToDelete.name, defaultValue: `Bạn có chắc chắn muốn xóa kỹ năng "${skillToDelete.skillName || skillToDelete.name}"? Thao tác này không thể hoàn tác.` })}
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">

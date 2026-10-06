@@ -6,7 +6,8 @@ const {createSkillService,
 
 const createSkill = async(req, res) => {
     try {
-        const {skillName, categoryId} = req.body
+        const skillName = req.body.skillName || req.body.name
+        const categoryId = req.body.categoryId
 
         const skill = await createSkillService(skillName, categoryId)
 
@@ -57,7 +58,8 @@ const getSkillById = async(req, res) => {
 const updateSkill = async(req, res) => {
     try {
 
-        const {skillName, categoryId} = req.body
+        const skillName = req.body.skillName || req.body.name
+        const categoryId = req.body.categoryId
         const skillId = req.params.id
 
         const skill = await updateSkillService(skillId, skillName, categoryId)

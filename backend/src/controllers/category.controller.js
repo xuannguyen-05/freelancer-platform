@@ -6,7 +6,8 @@ const {createCategoryService,
 
 const createCategory = async(req, res) => {
     try {
-        const {categoryName, description} = req.body
+        const categoryName = req.body.categoryName || req.body.name
+        const description = req.body.description
 
         const category = await createCategoryService(categoryName, description)
 
@@ -57,7 +58,8 @@ const getCategoryById = async(req, res) => {
 const updateCategory = async(req, res) => {
     try {
 
-        const {categoryName, description} = req.body
+        const categoryName = req.body.categoryName || req.body.name
+        const description = req.body.description
         const categoryId = req.params.id
 
         const category = await updateCategoryService(categoryId, categoryName, description)

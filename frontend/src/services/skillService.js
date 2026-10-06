@@ -12,12 +12,22 @@ export const skillService = {
   },
 
   createSkill: async (data) => {
-    const response = await axiosInstance.post('/skills', data)
+    const payload = {
+      skillName: (data.skillName ?? data.name)?.trim(),
+      categoryId: data.categoryId
+    }
+    const response = await axiosInstance.post('/skills', payload)
     return response.data
   },
 
   updateSkill: async (id, data) => {
-    const response = await axiosInstance.patch(`/skills/${id}`, data)
+    const payload = {
+      ...(data.skillName !== undefined || data.name !== undefined
+        ? { skillName: (data.skillName ?? data.name)?.trim() }
+        : {}),
+      ...(data.categoryId !== undefined ? { categoryId: data.categoryId } : {})
+    }
+    const response = await axiosInstance.patch(`/skills/${id}`, payload)
     return response.data
   },
 
