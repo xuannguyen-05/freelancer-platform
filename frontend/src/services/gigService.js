@@ -6,6 +6,11 @@ export const gigService = {
     return response.data
   },
 
+  getServices: async (params = {}) => {
+    const response = await axiosInstance.get('/services', { params })
+    return response.data
+  },
+
   getGigById: async (id) => {
     const response = await axiosInstance.get(`/gigs/${id}`)
     return response.data

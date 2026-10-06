@@ -21,6 +21,7 @@ const createOrder = async(req, res) => {
 
     } catch (error) {
         res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
             message: error.message
         })
    }
@@ -39,6 +40,7 @@ const getMyOrders = async(req, res) => {
 
     } catch (error) {
         res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
             message: error.message
         })
    }
@@ -57,6 +59,7 @@ const getFreelancerOrders = async(req, res) => {
 
     } catch (error) {
         res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
             message: error.message
         })
    }
@@ -76,6 +79,7 @@ const getOrderById = async(req, res) => {
 
     } catch (error) {
         res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
             message: error.message
         })
    }
@@ -95,6 +99,7 @@ const cancelOrder = async(req, res) => {
 
     } catch (error) {
         res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
             message: error.message
         })
     }

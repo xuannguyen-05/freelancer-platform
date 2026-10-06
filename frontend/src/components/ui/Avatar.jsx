@@ -1,4 +1,5 @@
 import { cn } from '../../utils/cn'
+import { resolveMediaUrl } from '../../utils/media'
 
 export function Avatar({ src, alt, className, fallback, ...props }) {
   return (
@@ -11,7 +12,7 @@ export function Avatar({ src, alt, className, fallback, ...props }) {
     >
       {src ? (
         <img
-          src={src}
+          src={resolveMediaUrl(src)}
           alt={alt || 'Avatar'}
           className="aspect-square h-full w-full object-cover"
         />

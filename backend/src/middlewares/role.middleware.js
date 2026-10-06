@@ -6,6 +6,7 @@ const roleMiddleware = (roles) => {
       const userId = req.user?.userId || req.user?.userID
       if (!userId) {
         return res.status(401).json({
+          code: "UNAUTHORIZED",
           message: "Unauthorized"
         })
       }
@@ -14,6 +15,7 @@ const roleMiddleware = (roles) => {
 
       if (!user || !user.isActive) {
         return res.status(401).json({
+          code: "UNAUTHORIZED",
           message: "Unauthorized"
         })
       }
@@ -22,13 +24,15 @@ const roleMiddleware = (roles) => {
 
       if (!hasRole) {
         return res.status(403).json({
-          message: "Forbidden"
+          code: "FORBIDDEN",
+          message: "Forbidden: insufficient permissions"
         })
       }
 
       next()
     } catch (error) {
       return res.status(500).json({
+        code: "INTERNAL_ERROR",
         message: "Internal server error"
       })
     }

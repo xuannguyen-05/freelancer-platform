@@ -1,6 +1,7 @@
 const mongoose = require("mongoose")
 const Skill = require("../models/skill")
 const Category = require("../models/category")
+const User = require("../models/user")
 const AppError = require("../utils/AppError")
 
 const createSkillService = async(skillName, categoryId) => {
@@ -102,9 +103,14 @@ const deleteSkillService = async(skillId) => {
         throw new AppError("Skill Not Found", 404);
     }
 
-    await Skill.findByIdAndDelete(skillId)
+    const userUsing = await User.exists({ skills: new mongoose.Types.ObjectId(skillId) });
+    if (userUsing) {
+        throw new AppError("Cannot delete skill: users are currently using this skill", 400, "SKILL_IN_USE");
+    }
 
-    return skill.toObject()
+    await Skill.findByIdAndDelete(skillId);
+
+    return skill.toObject();
 }
 
 

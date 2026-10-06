@@ -10,10 +10,18 @@ export const useAuthStore = create(
       isAuthenticated: false,
 
       setAuth: (data) => {
+        const accessToken = data.accessToken
+        const refreshToken = data.refreshTokenJWT || data.refreshToken
+        if (accessToken) {
+          localStorage.setItem('accessToken', accessToken)
+        }
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken)
+        }
         set({
           user: data.user || data,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshTokenJWT || data.refreshToken,
+          accessToken,
+          refreshToken,
           isAuthenticated: true,
         })
       },

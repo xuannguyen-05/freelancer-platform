@@ -14,13 +14,14 @@ const skill = require("./skill.routes")
 const project = require("./project.routes")
 const contract = require("./contract.routes")
 const task = require("./task.routes")
-
-
+const notification = require("./notification.routes")
+const admin = require("./admin.routes")
 
 router.use("/auth", auth)
 router.use("/users", user)
 router.use("/freelancers", freelancer)
 router.use("/gigs", gig)
+router.use("/services", gig)
 router.use("/packages", package)
 router.use("/orders", order)
 router.use("/reviews", review)
@@ -30,6 +31,8 @@ router.use("/skills", skill)
 router.use("/projects", project)
 router.use("/contracts", contract)
 router.use("/tasks", task)
+router.use("/notifications", notification)
+router.use("/admin", admin)
 
 module.exports = router
 

@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Link2, Mail } from 'lucide-react'
 import Brand from '../common/Brand'
 
 export default function Footer() {
   const { t } = useTranslation()
+  const location = useLocation()
+  const isLanding = location.pathname === '/'
 
   return (
     <footer className="border-t border-border bg-card px-4 py-7 sm:px-6 md:py-8">
@@ -18,9 +20,9 @@ export default function Footer() {
           <div>
             <h2 className="text-sm font-bold text-foreground">{t('landing.footer.explore')}</h2>
             <nav className="mt-3 flex flex-col items-start gap-2.5 text-sm" aria-label={t('landing.footer.explore')}>
-              <a href="#how-it-works" className="text-muted-foreground transition-colors hover:text-primary-600">{t('landing.footer.howItWorks')}</a>
-              <Link to="/app/gigs" className="text-muted-foreground transition-colors hover:text-primary-600">{t('landing.footer.gigs')}</Link>
-              <a href="#categories" className="text-muted-foreground transition-colors hover:text-primary-600">{t('landing.footer.categories')}</a>
+              <a href={isLanding ? '#how-it-works' : '/#how-it-works'} className="text-muted-foreground transition-colors hover:text-primary-600">{t('landing.footer.howItWorks')}</a>
+              <Link to="/app/home" className="text-muted-foreground transition-colors hover:text-primary-600">{t('landing.footer.gigs')}</Link>
+              <a href={isLanding ? '#categories' : '/#categories'} className="text-muted-foreground transition-colors hover:text-primary-600">{t('landing.footer.categories')}</a>
             </nav>
           </div>
 

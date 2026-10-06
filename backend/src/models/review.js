@@ -8,6 +8,13 @@ const reviewSchema = new mongoose.Schema({
     index: true
   },
 
+  gigId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Gig",
+    default: null,
+    index: true
+  },
+
   reviewer: {
     _id: {
       type: mongoose.Schema.Types.ObjectId,

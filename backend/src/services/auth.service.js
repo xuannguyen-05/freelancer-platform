@@ -10,7 +10,7 @@ const registerService  = async(data) => {
 
     const existingUser = await User.findOne({ email: normalizedEmail })
     if (existingUser){
-        throw new AppError("Email already exists", 409)
+        throw new AppError("Email already exists", 409, "EMAIL_ALREADY_EXISTS")
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -38,13 +38,13 @@ const loginService = async(data) => {
     const user = await User.findOne({ email: normalizedEmail })
 
     if (!user) {
-        throw new AppError("Invalid email or password", 400)
+        throw new AppError("Invalid email or password", 400, "INVALID_CREDENTIALS")
     }
 
     const isMatch = await bcrypt.compare(password, user.password)
 
     if (!isMatch) {
-        throw new AppError("Invalid email or password", 400)
+        throw new AppError("Invalid email or password", 400, "INVALID_CREDENTIALS")
     }
 
     const accessToken = jwt.sign(

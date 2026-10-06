@@ -27,7 +27,7 @@ export default function FinalCTA() {
           {t('landing.finalCTA.subheadline')}
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-          <Link to="/app/gigs" className="w-full sm:w-auto">
+          <Link to="/app/home" className="w-full sm:w-auto">
             <Button
               size="lg"
               className="landing-btn-lift w-full bg-primary-500 font-semibold shadow-sm hover:bg-primary-600 sm:w-auto"

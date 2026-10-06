@@ -117,6 +117,7 @@ router.get("/:id", authMiddleware, getTaskById);
 router.patch(
   "/:id",
   authMiddleware,
+  roleMiddleware(["freelancer"]),
   validate(updateTaskSchema),
   updateTask,
 );
@@ -151,6 +152,7 @@ router.patch(
 router.patch(
   "/:id/status",
   authMiddleware,
+  roleMiddleware(["buyer", "freelancer"]),
   validate(updateTaskStatusSchema),
   updateTaskStatus,
 );

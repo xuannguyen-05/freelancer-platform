@@ -15,6 +15,10 @@ const gigSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
+  img_public_id: {
+    type: String,
+    default: ""
+  },
 
   category: {
     _id: {
@@ -44,9 +48,40 @@ const gigSchema = new mongoose.Schema({
       type: String,
       default: ""
     }
+  },
+
+  tags: [{
+    type: String,
+    trim: true
+  }],
+
+  price: {
+    type: Number,
+    default: 0,
+    min: 0,
+    index: true
+  },
+
+  rating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5,
+    index: true
+  },
+
+  reviewCount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    index: true
   }
 
 }, { timestamps: true });
+
+gigSchema.index({ rating: -1, reviewCount: -1, createdAt: -1 });
+gigSchema.index({ price: 1, createdAt: -1 });
+gigSchema.index({ createdAt: -1 });
 
 const Gig = mongoose.model("Gig", gigSchema);
 

@@ -6,6 +6,7 @@ const authMiddleware = async (req, res, next) => {
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({
+            code: "NO_TOKEN_PROVIDED",
             message: "No token provided"
         })
     }
@@ -20,6 +21,7 @@ const authMiddleware = async (req, res, next) => {
 
         if (!user || !user.isActive) {
             return res.status(401).json({
+                code: "USER_INACTIVE",
                 message: "User is inactive or no longer exists"
             })
         }
@@ -32,7 +34,14 @@ const authMiddleware = async (req, res, next) => {
         next()
         
     } catch (error) {
+        if (error.name === "TokenExpiredError") {
+            return res.status(401).json({
+                code: "TOKEN_EXPIRED",
+                message: "Token has expired, please log in again"
+            })
+        }
         return res.status(401).json({
+            code: "INVALID_TOKEN",
             message: "Invalid token"
         })
     }

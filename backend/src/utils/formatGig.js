@@ -14,6 +14,7 @@ const formatGigSummary = (gig) => {
   return {
     id,
     title: gig.title,
+    description: gig.description || "",
     img_url: gig.img_url || gig.image || "",
     categoryID: categoryId,
     freelancerID: freelancerId,
@@ -29,7 +30,13 @@ const formatGigSummary = (gig) => {
           name: gig.freelancer.name,
           avatar: gig.freelancer.avatar || ""
         }
-      : null
+      : null,
+    tags: Array.isArray(gig.tags) ? gig.tags : [],
+    price: typeof gig.price === 'number' ? gig.price : 0,
+    rating: typeof gig.rating === 'number' ? gig.rating : 0,
+    reviewCount: typeof gig.reviewCount === 'number' ? gig.reviewCount : 0,
+    createdAt: gig.createdAt,
+    updatedAt: gig.updatedAt
   }
 }
 
@@ -50,22 +57,31 @@ const formatGigDetail = (gig) => {
       }))
     : undefined
 
+  const minPackagePrice = packages && packages.length > 0
+    ? Math.min(...packages.map(p => p.price))
+    : (typeof gig.price === 'number' ? gig.price : 0)
+
   return {
     id,
     title: gig.title,
     description: gig.description,
     img_url: gig.img_url || gig.image || "",
+    tags: Array.isArray(gig.tags) ? gig.tags : [],
+    price: minPackagePrice,
+    rating: typeof gig.rating === 'number' ? gig.rating : 0,
+    reviewCount: typeof gig.reviewCount === 'number' ? gig.reviewCount : 0,
     createdAt: gig.createdAt,
     updatedAt: gig.updatedAt,
     categoryID: categoryId,
     freelancerID: freelancerId,
-    freelancer: gig.freelancer
+    freelancer: gig.freelancerDetail || (gig.freelancer
       ? {
           userID: freelancerId,
+          id: freelancerId,
           name: gig.freelancer.name,
           avatar: gig.freelancer.avatar || ""
         }
-      : null,
+      : null),
     category: gig.category
       ? {
           categoryID: categoryId,

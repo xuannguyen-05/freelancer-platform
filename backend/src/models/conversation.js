@@ -4,8 +4,8 @@ const conversationSchema = new mongoose.Schema({
   orderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Order",
-    required: true,
-    unique: true,
+    required: false,
+    sparse: true,
     index: true
   },
 

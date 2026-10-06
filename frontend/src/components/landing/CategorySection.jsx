@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { categoryService } from '../../services/categoryService'
+import { useAuthStore } from '../../stores/authStore'
 import LandingDataState from './LandingDataState'
 import { useInView } from '../../hooks/useInView'
 import {
@@ -42,17 +43,41 @@ const ICON_CLASS = 'h-6 w-6 text-primary-600 stroke-[1.75] dark:text-primary-400
 export default function CategorySection() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [retryToken, setRetryToken] = useState(0)
   const [sectionRef, sectionInView] = useInView()
 
+  const handleViewAllCategories = () => {
+    if (!isAuthenticated) {
+      navigate('/auth/login', { state: { from: '/app/home' } })
+    } else {
+      navigate('/app/home')
+    }
+  }
+
+  const handleCategoryClick = (categoryId) => {
+    const target = `/app/home?category=${categoryId}`
+    if (!isAuthenticated) {
+      navigate('/auth/login', { state: { from: target } })
+    } else {
+      navigate(target)
+    }
+  }
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await categoryService.getCategories()
-        const list = response.data?.data || []
+        const list = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response?.data?.data)
+            ? response.data.data
+            : Array.isArray(response)
+              ? response
+              : []
         setCategories(list)
       } catch (requestError) {
         console.error('Failed to fetch categories:', requestError)
@@ -89,8 +114,8 @@ export default function CategorySection() {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/app/gigs')}
-            className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary-600 transition-colors duration-200 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            onClick={handleViewAllCategories}
+            className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary-600 transition-colors duration-200 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 cursor-pointer"
           >
             {t('landing.categories.viewAll')}
             <span aria-hidden>→</span>
@@ -119,10 +144,10 @@ export default function CategorySection() {
               <button
                 key={category._id}
                 type="button"
-                onClick={() => navigate(`/app/gigs?category=${category._id}`)}
+                onClick={() => handleCategoryClick(category._id)}
                 style={{ transitionDelay: sectionInView ? `${index * 60}ms` : undefined }}
                 className={cn(
-                  'landing-reveal group flex min-h-30 flex-col items-start gap-4 rounded-2xl border border-border bg-background p-5 text-left shadow-sm transition-all duration-300 ease-out',
+                  'landing-reveal group flex min-h-30 flex-col items-start gap-4 rounded-2xl border border-border bg-background p-5 text-left shadow-sm transition-all duration-300 ease-out cursor-pointer',
                   'hover:-translate-y-0.5 hover:border-primary-300/80 hover:shadow-md hover:shadow-primary-500/10 dark:bg-card dark:hover:border-primary-600/40',
                   sectionInView && 'is-visible'
                 )}

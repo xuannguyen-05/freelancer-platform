@@ -19,10 +19,15 @@ const formatProjectSummary = (project) => {
     orderId,
     buyerId,
     title: project.title,
+    description: project.description,
     status: project.status,
     statusText: PROJECT_STATUS_LABEL[project.status],
     createdAt: project.createdAt,
-    updatedAt: project.updatedAt
+    updatedAt: project.updatedAt,
+    order: project.order || null,
+    taskStats: project.taskStats || { total: 0, completed: 0 },
+    progress: project.progress ?? 0,
+    deadline: project.deadline || null
   }
 }
 
@@ -40,7 +45,9 @@ const formatProjectDetail = (project) => {
     status: project.status,
     statusText: PROJECT_STATUS_LABEL[project.status],
     createdAt: project.createdAt,
-    updatedAt: project.updatedAt
+    updatedAt: project.updatedAt,
+    order: project.order || null,
+    contract: project.contract || null
   }
 }
 

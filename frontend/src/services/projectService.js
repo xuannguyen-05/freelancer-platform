@@ -16,6 +16,11 @@ export const projectService = {
     return response.data
   },
 
+  getProjectByOrderId: async (orderId) => {
+    const response = await axiosInstance.get(`/projects/order/${orderId}`)
+    return response.data
+  },
+
   updateProject: async (id, data) => {
     const response = await axiosInstance.patch(`/projects/${id}`, data)
     return response.data

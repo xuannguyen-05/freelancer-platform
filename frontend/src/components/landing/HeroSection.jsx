@@ -1,17 +1,33 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useAuthStore } from '../../stores/authStore'
 import { Button } from '../ui'
 import { ArrowRight, BadgeCheck, Search, Sparkles, Users } from 'lucide-react'
 
 export default function HeroSection() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const [searchQuery, setSearchQuery] = useState('')
 
   const handleSearch = (e) => {
     e.preventDefault()
-    navigate(searchQuery.trim() ? `/app/gigs?search=${encodeURIComponent(searchQuery)}` : '/app/gigs')
+    const target = searchQuery.trim() ? `/app/home?search=${encodeURIComponent(searchQuery.trim())}` : '/app/home'
+    if (!isAuthenticated) {
+      navigate('/auth/login', { state: { from: target } })
+    } else {
+      navigate(target)
+    }
+  }
+
+  const handleTagClick = (suggestion) => {
+    const target = `/app/home?search=${encodeURIComponent(suggestion)}`
+    if (!isAuthenticated) {
+      navigate('/auth/login', { state: { from: target } })
+    } else {
+      navigate(target)
+    }
   }
 
   return (
@@ -67,14 +83,14 @@ export default function HeroSection() {
           <div className="landing-hero-enter landing-hero-enter-delay-3 mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
             <span className="font-semibold text-foreground">{t('landing.hero.popularLabel')}</span>
             {['Web App', 'UI/UX Design', 'Mobile App', 'Data Science', 'DevOps'].map((suggestion) => (
-              <button key={suggestion} type="button" onClick={() => navigate(`/app/gigs?search=${encodeURIComponent(suggestion)}`)} className="rounded-lg border border-border bg-card px-2.5 py-1.5 font-medium transition duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:text-primary-600">
+              <button key={suggestion} type="button" onClick={() => handleTagClick(suggestion)} className="rounded-lg border border-border bg-card px-2.5 py-1.5 font-medium transition duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:text-primary-600">
                 {suggestion}
               </button>
             ))}
           </div>
           <div className="mt-8 flex items-center gap-5 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-primary-500" /> Vetted talent</span>
-            <span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-primary-500" /> Global community</span>
+            <span className="flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-primary-500" /> {t('landing.hero.vettedTalent')}</span>
+            <span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-primary-500" /> {t('landing.hero.globalCommunity')}</span>
           </div>
         </div>
 

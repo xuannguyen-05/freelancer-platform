@@ -7,6 +7,7 @@ const AppError = require("../utils/AppError")
 const { CONTRACT_STATUS } = require("../constants/contractStatus")
 const Contract = require("../models/contract")
 const User = require("../models/user")
+const { createNotificationSafe, notifyMultipleRecipients } = require("./notification.service")
 
 
 const isProjectParticipant = async (projectId, userId) => {
@@ -150,7 +151,23 @@ const createTaskService = async(projectId, userId, data) => {
         status: TASK_STATUS.TODO
     })
 
-    return task
+    // Cross-user Notification: Notify assignee if different from creator
+    if (task.assigneeId && String(task.assigneeId) !== String(userId)) {
+        createNotificationSafe({
+            recipient: task.assigneeId,
+            sender: userId,
+            type: "task_assigned",
+            entityType: "project",
+            entityId: project._id,
+            link: `/app/projects/${project._id}`,
+            metadata: {
+                taskTitle: task.title,
+                projectTitle: project.title
+            }
+        })
+    }
+
+    return Task.findById(task._id).populate("assigneeId", "name avatar email role").lean()
 }
 
 const getTasksByProjectService = async(projectId, userId, page, limit) => {
@@ -170,6 +187,7 @@ const getTasksByProjectService = async(projectId, userId, page, limit) => {
 
     const [tasks, total] = await Promise.all([
         Task.find({ projectId })
+            .populate("assigneeId", "name avatar email role")
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 })
@@ -194,7 +212,7 @@ const getTaskByIdService = async(taskId, userId) => {
         throw new AppError("Invalid Task ID", 400)
     }
 
-    const task = await Task.findById(taskId)
+    const task = await Task.findById(taskId).populate("assigneeId", "name avatar email role").lean()
 
     if(!task){
         throw new AppError("Task Not Found", 404)
@@ -273,7 +291,28 @@ const updateTaskService = async(taskId, userId, data) => {
             new: true,
             runValidators: true
         }
-    ).lean()
+    ).populate("assigneeId", "name avatar email role").lean()
+
+    // Cross-user Notification: Notify new assignee if reassigned
+    if (
+        data.assigneeId &&
+        String(data.assigneeId) !== String(userId) &&
+        String(task.assigneeId) !== String(data.assigneeId)
+    ) {
+        const project = await Project.findById(task.projectId).select("title").lean()
+        createNotificationSafe({
+            recipient: data.assigneeId,
+            sender: userId,
+            type: "task_assigned",
+            entityType: "project",
+            entityId: task.projectId,
+            link: `/app/projects/${task.projectId}`,
+            metadata: {
+                taskTitle: updated.title,
+                projectTitle: project?.title || "Project"
+            }
+        })
+    }
 
     return updated
 }
@@ -370,9 +409,25 @@ const updateTaskStatusService = async (taskId, userId, data) => {
         taskId,
         updateData,
         { new: true, runValidators: true }
-    ).lean()
+    ).populate("assigneeId", "name avatar email role").lean()
 
     await updateProjectStatusIfNeeded(project)
+
+    // Cross-user Notification: Notify Contract Lead and Buyer when task is completed
+    if (status === TASK_STATUS.DONE) {
+        notifyMultipleRecipients([contract?.freelancerId, project?.buyerId], {
+            sender: userId,
+            type: "task_completed",
+            entityType: "project",
+            entityId: project._id,
+            link: `/app/projects/${project._id}`,
+            metadata: {
+                taskTitle: task.title,
+                projectTitle: project?.title || "Project",
+                actorName: updated.assigneeId?.name || "Member"
+            }
+        })
+    }
 
     return updated
 }

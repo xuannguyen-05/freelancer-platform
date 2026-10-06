@@ -1,6 +1,7 @@
 const mongoose = require("mongoose")
 const Category = require("../models/category")
 const Gig = require("../models/gig")
+const Skill = require("../models/skill")
 const AppError = require("../utils/AppError")
 
 const createCategoryService = async(categoryName, description) => {
@@ -101,7 +102,17 @@ const deleteCategoryService = async(categoryId) => {
     const category = await Category.findById(categoryId)
 
     if (!category){
-        throw new AppError("Category Not Found", 404);
+        throw new AppError("Category Not Found", 404)
+    }
+
+    const gigExists = await Gig.exists({ "category._id": new mongoose.Types.ObjectId(categoryId) })
+    if (gigExists) {
+        throw new AppError("Cannot delete category: existing gigs are associated with this category", 400, "CATEGORY_HAS_GIGS")
+    }
+
+    const skillExists = await Skill.exists({ categoryId: new mongoose.Types.ObjectId(categoryId) })
+    if (skillExists) {
+        throw new AppError("Cannot delete category: existing skills belong to this category", 400, "CATEGORY_HAS_SKILLS")
     }
 
     await Category.findByIdAndDelete(categoryId)

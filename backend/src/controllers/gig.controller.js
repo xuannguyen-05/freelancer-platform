@@ -7,12 +7,14 @@ const { formatGigSummary, formatGigDetail } = require("../utils/formatGig")
 
 const getGigs = async (req, res) => {
    try {
-    const page = Number(req.query.page) || 1
-    const limit = Math.min(Number(req.query.limit) || 10, 50)
-    const categoryID = req.query.categoryID
+    const page = Math.max(Number(req.query.page) || 1, 1)
+    const limit = Math.min(Number(req.query.limit) || 9, 50)
+    const categoryID = req.query.categoryID || req.query.categoryId
     const search = req.query.search
+    const sort = req.query.sort
+    const freelancerID = req.query.freelancerID || req.query.freelancerId
 
-    const result = await getGigsService(page, limit, categoryID, search)
+    const result = await getGigsService(page, limit, categoryID, search, sort, freelancerID)
 
     res.status(200).json({
         message: "Get gigs successfully",
@@ -20,12 +22,18 @@ const getGigs = async (req, res) => {
             page: result.page,
             limit: result.limit,
             total: result.total,
+            totalPages: result.totalPages || Math.ceil(result.total / result.limit) || 1,
             data: result.data.map(formatGigSummary)
-        }
+        },
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages || Math.ceil(result.total / result.limit) || 1
     })
 
    } catch (error) {
         res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
             message: error.message
         })
    }
@@ -44,6 +52,7 @@ const getGigById = async (req, res) => {
 
     } catch (error) {
         res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
             message: error.message
         })
     }
@@ -62,6 +71,7 @@ const createGig = async (req, res) => {
 
     } catch (error) {
         res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
             message: error.message
         })
     }
@@ -81,6 +91,7 @@ const updateGig = async(req, res) => {
         
     } catch (error) {
         res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
             message: error.message
         })
     }
@@ -100,6 +111,7 @@ const deleteGig = async(req, res) => {
         
     } catch (error) {
         res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
             message: error.message
         })
     }

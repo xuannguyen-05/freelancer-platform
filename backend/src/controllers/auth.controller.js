@@ -15,7 +15,8 @@ const register  = async(req, res) => {
         })
     } catch (error) {
         res.status(error.statusCode || 500).json({
-            message: error.message
+            message: error.message,
+            code: error.code || null
         })
     }
 }
@@ -29,7 +30,8 @@ const login = async(req, res) => {
         })
     } catch (error) {
         res.status(error.statusCode || 500).json({
-            message: error.message
+            message: error.message,
+            code: error.code || null
         })
     }
 }
@@ -40,7 +42,8 @@ const refreshToken = async(req, res) => {
         res.status(200).json({ data })
     } catch (error) {
         res.status(error.statusCode || 500).json({
-            message: error.message
+            message: error.message,
+            code: error.code || null
         })
     }
 }
@@ -51,7 +54,8 @@ const logout = async(req, res) => {
         res.status(200).json(data)
     } catch (error) {
         res.status(error.statusCode || 500).json({
-            message: error.message
+            message: error.message,
+            code: error.code || null
         })
     }
 }
@@ -63,12 +67,18 @@ const me = async (req, res) => {
             .lean()
 
         if (!user || !user.isActive) {
-            return res.status(401).json({ message: "User is inactive or no longer exists" })
+            return res.status(401).json({
+                code: "USER_INACTIVE",
+                message: "User is inactive or no longer exists"
+            })
         }
 
         res.json({ user })
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" })
+        res.status(500).json({
+            code: "INTERNAL_ERROR",
+            message: "Internal server error"
+        })
     }
 }
 

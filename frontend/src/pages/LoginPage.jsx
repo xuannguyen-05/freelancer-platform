@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../stores/authStore'
 import { authService } from '../services/authService'
 import { Input, Button } from '../components/ui'
 import toast from 'react-hot-toast'
+import { getAuthErrorMessage } from '../utils/authError'
 
 export default function LoginPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const setAuth = useAuthStore((state) => state.setAuth)
 
   const [formData, setFormData] = useState({
@@ -33,9 +35,16 @@ export default function LoginPage() {
       const response = await authService.login(formData)
       setAuth(response.data)
       toast.success(t('auth.loginSuccess'))
-      navigate('/')
+      const role = response.data?.user?.role || response.data?.role
+      let destination = '/app/home'
+      if (role === 'admin') {
+        destination = location.state?.from?.startsWith('/admin') ? location.state.from : '/admin/overview'
+      } else {
+        destination = location.state?.from?.startsWith('/admin') ? '/app/home' : (location.state?.from || '/app/home')
+      }
+      navigate(destination, { replace: true })
     } catch (error) {
-      toast.error(error.response?.data?.message || t('auth.invalidCredentials'))
+      toast.error(getAuthErrorMessage(error, t))
     } finally {
       setLoading(false)
     }
@@ -59,7 +68,7 @@ export default function LoginPage() {
             onChange={handleChange}
             required
             placeholder={t('auth.emailPlaceholder')}
-            className="!rounded-xl !border-border !bg-background !py-3 !text-foreground focus:!border-primary-500 focus:!ring-primary-500/20"
+            className="rounded-xl! border-border! bg-background! py-3! text-foreground! focus:border-primary-500! focus:ring-primary-500/20!"
           />
         </div>
 
@@ -72,7 +81,7 @@ export default function LoginPage() {
             onChange={handleChange}
             required
             placeholder={t('auth.passwordPlaceholder')}
-            className="!rounded-xl !border-border !bg-background !py-3 !text-foreground focus:!border-primary-500 focus:!ring-primary-500/20"
+            className="rounded-xl! border-border! bg-background! py-3! text-foreground! focus:border-primary-500! focus:ring-primary-500/20!"
           />
         </div>
 
@@ -83,7 +92,7 @@ export default function LoginPage() {
 
       <div className="mt-7 border-t border-border pt-5 text-center text-sm">
         <span className="text-muted-foreground">{t('auth.dontHaveAccount')} </span>
-        <Link to="/auth/register" className="text-primary-600 hover:underline">
+        <Link to="/auth/register" state={location.state} className="text-primary-600 hover:underline">
           {t('auth.register')}
         </Link>
       </div>

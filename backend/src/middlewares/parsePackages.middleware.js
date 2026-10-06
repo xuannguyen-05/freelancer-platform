@@ -1,6 +1,6 @@
 const parsePackages = (req, res, next) => {
   try {
-    if (req.body.packages) {
+    if (req.body.packages && typeof req.body.packages === 'string') {
       req.body.packages = JSON.parse(req.body.packages)
     }
     next()

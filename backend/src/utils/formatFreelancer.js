@@ -25,16 +25,28 @@ const formatFreelancer = (freelancer) => {
       }).filter(Boolean)
     : []
 
+  const skillNameList = freelancer.skillNames && freelancer.skillNames.length > 0
+    ? freelancer.skillNames
+    : normalizedSkills.map(s => s.name).filter(Boolean)
+
   return {
     id,
     name: freelancer.name,
     avatar: freelancer.avatar || "",
-    slogan: profile.slogan || "",
-    description: profile.description || "",
+    slogan: profile.slogan || freelancer.professionalTitle || "",
+    professionalTitle: freelancer.professionalTitle || profile.slogan || "",
+    description: profile.description || freelancer.bio || "",
+    bio: freelancer.bio || profile.description || "",
+    location: freelancer.location || "",
     level: profile.level ?? 1,
-    rating: Number(profile.rating ?? 0),
-    reviewCount: profile.reviewCount ?? 0,
-    skills: normalizedSkills
+    rating: typeof freelancer.rating === 'number' ? freelancer.rating : Number(profile.rating ?? 0),
+    reviewCount: typeof freelancer.reviewCount === 'number' ? freelancer.reviewCount : (profile.reviewCount ?? 0),
+    ordersCompleted: typeof freelancer.ordersCompleted === 'number' ? freelancer.ordersCompleted : (profile.completedProjects ?? 0),
+    completionRate: freelancer.completionRate ?? null,
+    skills: normalizedSkills,
+    skillNames: skillNameList,
+    preferences: freelancer.preferences || {},
+    createdAt: freelancer.createdAt
   }
 }
 

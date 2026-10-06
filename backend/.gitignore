@@ -1,6 +1,21 @@
 node_modules
-# Keep environment variables out of version control
-.env
 
 public/uploads/
 
+# env
+.env
+.env.docker
+
+# build
+dist/
+build/
+
+# logs
+*.log
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+/src/generated/prisma
