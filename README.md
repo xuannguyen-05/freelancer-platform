@@ -6,7 +6,7 @@ Users can discover professional services (Gigs) with multi-tier pricing, place a
 
 ## 🌐 Live Demo
 
-* **Link web:** [https://workly-marketplace.vercel.app](https://workly-marketplace.vercel.app)
+* **Link web:** https://freelancer-platform-eight.vercel.app
 
 ---
 
