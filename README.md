@@ -102,30 +102,6 @@ Workly provides an end-to-end ecosystem for digital freelance work:
 
 ![System Architecture](./docs/system-architecture.png)
 
-```mermaid
-flowchart LR
-    User["User\n(Web Browser)"]
-
-    subgraph Presentation["PRESENTATION LAYER"]
-        Vercel["Vercel\nReact 18 SPA (Vite)"]
-    end
-
-    subgraph BackendLayer["API & BACKEND LAYER"]
-        Render["Render\nNode.js / Express.js REST API"]
-    end
-
-    subgraph DataLayer["DATA & STORAGE LAYER"]
-        Mongo[("MongoDB Atlas\nCloud Database")]
-        Cloudinary["Cloudinary\nMedia Storage & CDN"]
-    end
-
-    User -->|HTTPS| Vercel
-    Vercel -->|REST API / HTTPS| Render
-    Render -->|TLS| Mongo
-    Render -->|Upload API| Cloudinary
-    Vercel -.->|Fetch Images| Cloudinary
-```
-
 ---
 
 ## 📦 Project Structure
@@ -202,86 +178,6 @@ workly/
 ├── .gitignore
 └── README.md
 ```
-
----
-
-## 🔌 API Overview
-
-### 🔐 Authentication (`/api/auth`)
-* `POST /api/auth/register` – Register a new account (default role: `buyer`)
-* `POST /api/auth/login` – Login with email & password, returns JWT tokens
-* `POST /api/auth/refresh-token` – Refresh expired Access Token using Refresh Token
-* `GET  /api/auth/me` – Retrieve authenticated user profile
-
-### 👤 Users (`/api/users`)
-* `GET   /api/users/me` – Get current profile details
-* `PATCH /api/users/me` – Update profile info & avatar (streams avatar buffer to Cloudinary)
-* `POST  /api/users/change-password` – Change password with current password verification
-* `GET   /api/users/lookup` – Lookup user by email for collaboration
-* `GET   /api/users/:id` – View public user profile
-
-### 💼 Freelancers (`/api/freelancers`)
-* `GET  /api/freelancers` – Query list of freelancers with filters and pagination
-* `GET  /api/freelancers/:id` – View detailed freelancer portfolio & statistics
-* `POST /api/freelancers/apply` – Submit application to become a freelancer (`pending` status)
-
-### 🎨 Gigs & Packages (`/api/gigs`)
-* `GET    /api/gigs` – Public gig search with category, price, rating, keyword filters
-* `GET    /api/gigs/:id` – Detailed gig information with packages and freelancer profile
-* `POST   /api/gigs` – Create a new gig with banner image (streamed to Cloudinary) and packages
-* `PATCH  /api/gigs/:id` – Update gig details, pricing, and banner image (auto-cleans old asset)
-* `DELETE /api/gigs/:id` – Delete gig and associated Cloudinary assets
-* `GET    /api/gigs/:id/packages` – Retrieve pricing packages for a gig
-
-### 📦 Orders (`/api/orders`)
-* `POST  /api/orders` – Place an order for a gig package (Buyer only)
-* `GET   /api/orders` – List orders for current user (filtered by role: Buyer or Freelancer)
-* `GET   /api/orders/:id` – Detailed order view with gig snapshot and status tracking
-* `PATCH /api/orders/:id/status` – Update order lifecycle state (`in_progress`, `delivered`, `completed`, `cancelled`)
-
-### 📁 Projects & Teams (`/api/projects`)
-* `POST  /api/projects` – Create a project workspace (Buyer only)
-* `GET   /api/projects` – List accessible projects
-* `GET   /api/projects/:id` – Project detail workspace with team members
-* `PATCH /api/projects/:id` – Update project metadata and budget
-* `POST  /api/projects/:id/members` – Add team member to project
-* `DELETE /api/projects/:id/members/:memberId` – Remove team member from project
-
-### 📜 Contracts (`/api/contracts`)
-* `POST  /api/contracts` – Generate contract for project or order
-* `GET   /api/contracts` – List user contracts
-* `GET   /api/contracts/:id` – Contract details with milestone terms
-* `PATCH /api/contracts/:id/status` – Update contract state (`active`, `completed`, `cancelled`)
-
-### ✅ Tasks (`/api/tasks`)
-* `POST   /api/tasks` – Create task in project contract
-* `GET    /api/tasks` – Query tasks by project or contract ID
-* `PATCH  /api/tasks/:id` – Update task status, assignee, effort points, or due date
-* `DELETE /api/tasks/:id` – Delete task
-
-### ⭐ Reviews (`/api/reviews`)
-* `POST /api/reviews` – Submit review & rating for a completed order (Buyer → Freelancer)
-* `GET  /api/reviews/gig/:gigId` – Get verified reviews for a gig
-* `GET  /api/reviews/freelancer/:freelancerId` – Get verified reviews for a freelancer
-
-### 🔔 Notifications (`/api/notifications`)
-* `GET   /api/notifications` – List user notifications with unread count
-* `PATCH /api/notifications/:id/read` – Mark specific notification as read
-* `PATCH /api/notifications/read-all` – Mark all notifications as read
-
-### 🛡️ Admin Management (`/api/admin`)
-* `GET   /api/admin/overview` – Dashboard overview statistics & platform KPIs
-* `GET   /api/admin/freelancer-applications` – List pending, approved, and rejected applications
-* `GET   /api/admin/freelancer-applications/:id` – View specific freelancer application
-* `PATCH /api/admin/freelancer-applications/:id/approve` – Approve application (converts user to Freelancer)
-* `PATCH /api/admin/freelancer-applications/:id/reject` – Reject application with reason
-* `POST  /api/admin/categories` – Create marketplace category
-* `PATCH /api/admin/categories/:id` – Update category
-* `DELETE /api/admin/categories/:id` – Delete category
-* `POST  /api/admin/skills` – Create skill
-* `PATCH /api/admin/skills/:id` – Update skill
-* `DELETE /api/admin/skills/:id` – Delete skill
-
 ---
 
 ## 🌐 Deployment
