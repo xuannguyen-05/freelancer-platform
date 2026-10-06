@@ -6,9 +6,7 @@ Users can discover professional services (Gigs) with multi-tier pricing, place a
 
 ## 🌐 Live Demo
 
-* **Frontend:** [https://workly-marketplace.vercel.app](https://workly-marketplace.vercel.app)
-* **Backend API:** [https://workly-api.onrender.com](https://workly-api.onrender.com)
-* **API Documentation:** [https://workly-api.onrender.com/api-docs](https://workly-api.onrender.com/api-docs)
+* **Link web:** [https://workly-marketplace.vercel.app](https://workly-marketplace.vercel.app)
 
 ---
 
@@ -102,7 +100,7 @@ Workly provides an end-to-end ecosystem for digital freelance work:
 
 ## 🏗️ System Architecture
 
-![System Architecture](./docs/system-architecture.svg)
+![System Architecture](./docs/system-architecture.png)
 
 ```mermaid
 flowchart LR
