@@ -33,8 +33,13 @@ const sendMessageService  = async(conversationId, senderId, content) => {
 
     return {
         ...message.toObject(),
+        id: String(message._id),
+        _id: String(message._id),
+        senderId: String(senderId),
+        senderID: String(senderId),
         sender: {
-            _id: senderId,
+            _id: String(senderId),
+            id: String(senderId),
             name: sender?.name || "",
             avatar: sender?.avatar || ""
         }
@@ -57,6 +62,12 @@ const getMessagesByConversationService  = async(conversationId, userId) => {
         throw new AppError("Forbidden", 403)
     }
 
+    // Mark unread messages as read
+    await Message.updateMany(
+        { conversationId, senderId: { $ne: new mongoose.Types.ObjectId(userId) }, readAt: null },
+        { $set: { readAt: new Date() } }
+    )
+
     const messages = await Message.find({ conversationId }).sort({ createdAt: 1 }).lean()
 
     const senderIds = [...new Set(messages.map((m) => String(m.senderId)))]
@@ -65,8 +76,13 @@ const getMessagesByConversationService  = async(conversationId, userId) => {
 
     return messages.map((message) => ({
         ...message,
+        id: String(message._id),
+        _id: String(message._id),
+        senderId: String(message.senderId),
+        senderID: String(message.senderId),
         sender: {
-            _id: message.senderId,
+            _id: String(message.senderId),
+            id: String(message.senderId),
             name: userMap.get(String(message.senderId))?.name || "",
             avatar: userMap.get(String(message.senderId))?.avatar || ""
         }

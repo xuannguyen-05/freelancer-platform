@@ -55,9 +55,14 @@ const paySchema = z.object({
   amount: z.number().positive()
 })
 
+const addMemberSchema = z.object({
+  email: z.string().email("Invalid email address"),
+})
+
 module.exports = {
   createContractSchema,
   updateContractSchema,
   updateStatusSchema,
-  paySchema
+  paySchema,
+  addMemberSchema
 };

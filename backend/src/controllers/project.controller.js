@@ -1,5 +1,6 @@
 const {createProjectService, 
     getProjectByIdService, 
+    getProjectByOrderIdService,
     getMyProjectsService,
     updateProjectService,
     completeProjectService,
@@ -37,6 +38,31 @@ const getProjectById = async(req, res) => {
 
         res.status(200).json({
             message: "Get project detail successfully",
+            data: formatProjectDetail(project)
+        })
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            message: error.message
+        })
+    }
+}
+
+const getProjectByOrderId = async(req, res) => {
+    try {
+        const userId = req.user.userID
+        const orderId = req.params.orderId
+
+        const project = await getProjectByOrderIdService(orderId, userId)
+
+        if (!project) {
+            return res.status(200).json({
+                message: "No project for this order",
+                data: null
+            })
+        }
+
+        res.status(200).json({
+            message: "Get project by order successfully",
             data: formatProjectDetail(project)
         })
     } catch (error) {
@@ -134,6 +160,7 @@ const cancelProject = async(req, res) => {
 
 module.exports = {createProject,
                     getProjectById,
+                    getProjectByOrderId,
                     getMyProjects,
                     updateProject,
                     completeProject,

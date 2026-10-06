@@ -24,7 +24,7 @@ router.get("/freelancer", authMiddleware, roleMiddleware(["freelancer"]), getFre
 
 router.get("/:id", authMiddleware, getOrderById)
 
-router.patch("/:id/cancel", authMiddleware, cancelOrder)
+router.patch("/:id/cancel", authMiddleware, roleMiddleware(["buyer"]), cancelOrder)
 
 
 module.exports = router

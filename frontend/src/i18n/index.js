@@ -15,8 +15,10 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: 'en',
-    lng: localStorage.getItem('language') || 'en',
+    fallbackLng: 'vi',
+    supportedLngs: ['en', 'vi'],
+    nonExplicitSupportedLngs: true,
+    lng: (localStorage.getItem('language') || 'vi').toLowerCase().startsWith('en') ? 'en' : 'vi',
     interpolation: {
       escapeValue: false,
     },

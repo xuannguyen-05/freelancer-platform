@@ -4,22 +4,25 @@ import { X } from 'lucide-react'
 export function Dialog({ open, onClose, children, className }) {
   if (!open) return null
 
+  const hasCustomMaxW = Boolean(className && /\bmax-w-/.test(className))
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       <div
-        className="fixed inset-0 bg-black/50"
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
         className={cn(
-          'relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg',
+          'relative z-50 w-full rounded-2xl border border-border bg-background shadow-2xl transition-all',
+          !hasCustomMaxW && 'max-w-lg p-6',
           className
         )}
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="absolute right-4 top-4 rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-20 cursor-pointer"
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>

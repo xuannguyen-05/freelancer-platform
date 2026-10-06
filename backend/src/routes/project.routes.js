@@ -8,6 +8,7 @@ const {
   createProject,
   getProjectById,
   getMyProjects,
+  getProjectByOrderId,
   updateProject,
   completeProject,
   cancelProject,
@@ -37,11 +38,14 @@ router.post(
 
 router.get("/my", authMiddleware, getMyProjects);
 
+router.get("/order/:orderId", authMiddleware, getProjectByOrderId);
+
 router.get("/detail/:id", authMiddleware, getProjectById);
 
 router.patch(
   "/:id",
   authMiddleware,
+  roleMiddleware(["buyer"]),
   validate(updateProjectSchema),
   updateProject,
 );
@@ -65,7 +69,7 @@ router.patch(
  *       200:
  *         description: Project completed successfully
  */
-router.patch("/:id/complete", authMiddleware, completeProject);
+router.patch("/:id/complete", authMiddleware, roleMiddleware(["buyer"]), completeProject);
 
 /**
  * @swagger
@@ -85,7 +89,7 @@ router.patch("/:id/complete", authMiddleware, completeProject);
  *       200:
  *         description: Project cancelled successfully
  */
-router.patch("/:id/cancel", authMiddleware, cancelProject);
+router.patch("/:id/cancel", authMiddleware, roleMiddleware(["buyer", "freelancer"]), cancelProject);
 
 /**
  * @swagger
@@ -125,6 +129,7 @@ router.patch("/:id/cancel", authMiddleware, cancelProject);
 router.post(
   "/:projectId/tasks",
   authMiddleware,
+  roleMiddleware(["freelancer"]),
   validate(createTaskSchema),
   createTask,
 );

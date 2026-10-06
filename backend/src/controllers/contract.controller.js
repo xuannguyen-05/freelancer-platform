@@ -10,7 +10,9 @@ const {createContractService,
         getFreelancerStatsService,
         getProjectSummaryService,
         getOverviewService,
-        getProjectsOverOrderBudgetService
+        getProjectsOverOrderBudgetService,
+        addContractMemberService,
+        removeContractMemberService
 } = require("../services/contract.service")
 const {formatContractSummary, formatContractDetail} = require("../utils/formatContract")
 
@@ -269,18 +271,60 @@ const getProjectsOverOrderBudget = async (req, res) => {
     }
 }
 
+const addContractMember = async (req, res) => {
+    try {
+        const userId = req.user.userID
+        const contractId = req.params.id
+        const { email } = req.body
 
-module.exports = {createContract,
-                    getContractById,
-                    getMyContracts,
-                    updateContract,
-                    updateContractStatus,
-                    payContract,
-                    getContractBalance,
-                    getContractProgressFinance,
-                    getContractStats,
-                    getFreelancerStats,
-                    getProjectSummary,
-                    getOverview,
-                    getProjectsOverOrderBudget
-                }
+        const contract = await addContractMemberService(contractId, userId, email)
+
+        res.status(200).json({
+            message: "Member added successfully",
+            data: formatContractDetail(contract)
+        })
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
+            message: error.message
+        })
+    }
+}
+
+const removeContractMember = async (req, res) => {
+    try {
+        const userId = req.user.userID
+        const contractId = req.params.id
+        const memberId = req.params.memberId
+
+        const contract = await removeContractMemberService(contractId, userId, memberId)
+
+        res.status(200).json({
+            message: "Member removed successfully",
+            data: formatContractDetail(contract)
+        })
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
+            message: error.message
+        })
+    }
+}
+
+module.exports = {
+    createContract,
+    getContractById,
+    getMyContracts,
+    updateContract,
+    updateContractStatus,
+    payContract,
+    getContractBalance,
+    getContractProgressFinance,
+    getContractStats,
+    getFreelancerStats,
+    getProjectSummary,
+    getOverview,
+    getProjectsOverOrderBudget,
+    addContractMember,
+    removeContractMember
+}

@@ -18,6 +18,8 @@ const {
   getProjectSummary,
   getOverview,
   getProjectsOverOrderBudget,
+  addContractMember,
+  removeContractMember,
 } = require("../controllers/contract.controller");
 
 const {
@@ -25,6 +27,7 @@ const {
   updateContractSchema,
   updateStatusSchema,
   paySchema,
+  addMemberSchema,
 } = require("../schemas/contract.schema.js");
 
 const router = express.Router();
@@ -32,7 +35,7 @@ const router = express.Router();
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["buyer"]),
+  roleMiddleware(["buyer", "freelancer"]),
   validate(createContractSchema),
   createContract,
 );
@@ -173,6 +176,7 @@ router.get("/projects-over-order", authMiddleware, getProjectsOverOrderBudget);
 router.patch(
   "/:id/status",
   authMiddleware,
+  roleMiddleware(["buyer", "freelancer"]),
   validate(updateStatusSchema),
   updateContractStatus,
 );
@@ -252,12 +256,29 @@ router.get("/:id/balance", authMiddleware, getContractBalance);
 router.get("/:id/progress-finance", authMiddleware, getContractProgressFinance);
 
 router.get("/detail/:id", authMiddleware, getContractById);
+router.get("/:id", authMiddleware, getContractById);
 
 router.patch(
   "/:id",
   authMiddleware,
+  roleMiddleware(["buyer"]),
   validate(updateContractSchema),
   updateContract,
+);
+
+router.post(
+  "/:id/members",
+  authMiddleware,
+  roleMiddleware(["freelancer"]),
+  validate(addMemberSchema),
+  addContractMember,
+);
+
+router.delete(
+  "/:id/members/:memberId",
+  authMiddleware,
+  roleMiddleware(["freelancer"]),
+  removeContractMember,
 );
 
 module.exports = router;

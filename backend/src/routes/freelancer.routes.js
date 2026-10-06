@@ -1,5 +1,5 @@
 const express = require("express");
-const {createFreelancer, getFreelancerById, getMyFreelancer, updateMyFreelancer} = require("../controllers/freelancer.controller")
+const {createFreelancer, getMyApplication, getFreelancerById, getMyFreelancer, updateMyFreelancer, getFreelancers} = require("../controllers/freelancer.controller")
 const { authMiddleware } = require("../middlewares/auth.middleware.js")
 const {roleMiddleware} = require("../middlewares/role.middleware.js")
 const {createFreelancerSchema, updateFreelancerSchema} = require("../schemas/freelancer.schema.js")
@@ -8,7 +8,9 @@ const {validate} = require("../middlewares/validate.middleware")
 
 const router = express.Router();
 
+router.get("/", getFreelancers)
 router.post("/", authMiddleware, roleMiddleware(["buyer"]), validate(createFreelancerSchema), createFreelancer)
+router.get("/my-application", authMiddleware, getMyApplication)
 router.get("/me", authMiddleware, getMyFreelancer)
 router.patch("/me", authMiddleware, validate(updateFreelancerSchema), updateMyFreelancer)
 

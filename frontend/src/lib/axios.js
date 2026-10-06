@@ -13,7 +13,21 @@ const axiosInstance = axios.create({
 // Request interceptor to add auth token
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken')
+    let token = localStorage.getItem('accessToken')
+    if (!token) {
+      try {
+        const authStorage = localStorage.getItem('auth-storage')
+        if (authStorage) {
+          const parsed = JSON.parse(authStorage)
+          token = parsed?.state?.accessToken
+          if (token) {
+            localStorage.setItem('accessToken', token)
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to parse auth-storage in axios interceptor:', e)
+      }
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -35,7 +49,16 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken')
+        let refreshToken = localStorage.getItem('refreshToken')
+        if (!refreshToken) {
+          try {
+            const authStorage = localStorage.getItem('auth-storage')
+            if (authStorage) {
+              refreshToken = JSON.parse(authStorage)?.state?.refreshToken
+            }
+          } catch (e) {}
+        }
+
         if (refreshToken) {
           const response = await axios.post(
             `${API_BASE_URL}/auth/refresh-token`,
@@ -43,16 +66,18 @@ axiosInstance.interceptors.response.use(
           )
 
           const { accessToken } = response.data.data
-          localStorage.setItem('accessToken', accessToken)
-
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`
-          return axiosInstance(originalRequest)
+          if (accessToken) {
+            localStorage.setItem('accessToken', accessToken)
+            originalRequest.headers.Authorization = `Bearer ${accessToken}`
+            return axiosInstance(originalRequest)
+          }
         }
       } catch (refreshError) {
         // Refresh failed, clear tokens and redirect to login
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
-        window.location.href = '/login'
+        localStorage.removeItem('auth-storage')
+        window.location.href = '/auth/login'
         return Promise.reject(refreshError)
       }
     }

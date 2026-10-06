@@ -1,7 +1,12 @@
 const express = require("express")
 const { authMiddleware } = require("../middlewares/auth.middleware")
 
-const { createConversation, getConversationByOrderId } = require("../controllers/conversation.controller")
+const { 
+    createConversation, 
+    getConversationByOrderId,
+    getMyConversations,
+    getUnreadCount
+} = require("../controllers/conversation.controller")
 const { sendMessage, getMessagesByConversation } = require("../controllers/message.controller")
 const {sendMessageSchema} = require("../schemas/message.schema")
 const {validate} = require("../middlewares/validate.middleware")
@@ -10,6 +15,8 @@ const router = express.Router()
 
 // Conversation
 router.post("/", authMiddleware, createConversation)
+router.get("/", authMiddleware, getMyConversations)
+router.get("/unread-count", authMiddleware, getUnreadCount)
 router.get("/:orderId", authMiddleware, getConversationByOrderId)
 
 // Nested messages

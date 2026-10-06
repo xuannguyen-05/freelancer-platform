@@ -25,10 +25,47 @@ const userSchema = new mongoose.Schema({
     default: ""
   },
 
+  avatar_public_id: {
+    type: String,
+    default: ""
+  },
+
   bio: {
     type: String,
     default: "",
     trim: true
+  },
+
+  location: {
+    type: String,
+    default: "",
+    trim: true
+  },
+
+  professionalTitle: {
+    type: String,
+    default: "",
+    trim: true
+  },
+
+  skillNames: [{
+    type: String,
+    trim: true
+  }],
+
+  preferences: {
+    allowDirectContact: {
+      type: Boolean,
+      default: true
+    },
+    showPublicProfile: {
+      type: Boolean,
+      default: true
+    },
+    acceptOrders: {
+      type: Boolean,
+      default: true
+    }
   },
 
   role: {

@@ -4,9 +4,12 @@ const Contract = require("../models/contract")
 const User = require("../models/user")
 const Task = require("../models/task")
 const Order = require("../models/order")
+const Gig = require("../models/gig")
 const { PROJECT_STATUS } = require("../constants/projectStatus")
 const { CONTRACT_STATUS } = require("../constants/contractStatus")
 const { TASK_STATUS } = require("../constants/taskStatus")
+const { ORDER_STATUS } = require("../constants/orderStatus")
+const { createNotificationSafe, notifyMultipleRecipients } = require("./notification.service")
 const AppError = require("../utils/AppError")
 
 const normalizeMemberIds = (memberIds = [], freelancerId) => {
@@ -111,7 +114,7 @@ const createContractService = async(projectId, userId, data) => {
     const existed = await Contract.findOne({
         projectId,
         freelancerId: data.freelancerId,
-        status: { $in: [CONTRACT_STATUS.DRAFT, CONTRACT_STATUS.ACTIVE] }
+        status: CONTRACT_STATUS.ACTIVE
     })
 
     if (existed) {
@@ -127,8 +130,8 @@ const createContractService = async(projectId, userId, data) => {
         hours: data.type === "hourly" ? data.hours : null,
         memberIds,
         paidAmount: 0,
-        status: CONTRACT_STATUS.DRAFT,
-        startDate: null,
+        status: CONTRACT_STATUS.ACTIVE,
+        startDate: new Date(),
         endDate: null
     })
 
@@ -140,7 +143,7 @@ const getContractByIdService = async(contractId, userId) => {
         throw new AppError("Invalid Contract ID", 400)
     }
     
-    const contract = await Contract.findById(contractId)
+    const contract = await Contract.findById(contractId).lean()
 
     if(!contract){
         throw new AppError("Contract Not Found", 404)
@@ -155,20 +158,157 @@ const getContractByIdService = async(contractId, userId) => {
         throw new AppError("You are not allowed to access this contract", 403)
     }
 
-    return contract
+    const [project, buyer, freelancer, members] = await Promise.all([
+        contract.projectId ? Project.findById(contract.projectId).lean() : null,
+        contract.buyerId ? User.findById(contract.buyerId).select("name avatar email role").lean() : null,
+        contract.freelancerId ? User.findById(contract.freelancerId).select("name avatar email role").lean() : null,
+        (contract.memberIds && contract.memberIds.length) ? User.find({ _id: { $in: contract.memberIds } }).select("name avatar email role").lean() : []
+    ])
+
+    let order = null
+    if (project?.orderId) {
+        const rawOrder = await Order.findById(project.orderId).lean()
+        if (rawOrder) {
+            const gigData = rawOrder.gig?._id ? await Gig.findById(rawOrder.gig._id).select("img_url image").lean() : null
+            order = {
+                id: String(rawOrder._id),
+                _id: String(rawOrder._id),
+                title: rawOrder.gig?.title || project.title,
+                price: rawOrder.price,
+                totalAmount: rawOrder.totalAmount,
+                status: rawOrder.status,
+                image: gigData?.img_url || gigData?.image || null
+            }
+        }
+    }
+
+    return {
+        ...contract,
+        buyer: buyer ? {
+            id: String(buyer._id),
+            _id: String(buyer._id),
+            name: buyer.name,
+            avatar: buyer.avatar,
+            email: buyer.email,
+            role: buyer.role
+        } : null,
+        freelancer: freelancer ? {
+            id: String(freelancer._id),
+            _id: String(freelancer._id),
+            name: freelancer.name,
+            avatar: freelancer.avatar,
+            email: freelancer.email,
+            role: freelancer.role
+        } : null,
+        members: (members || []).map(m => ({
+            id: String(m._id),
+            _id: String(m._id),
+            name: m.name,
+            avatar: m.avatar,
+            email: m.email,
+            role: m.role
+        })),
+        project: project ? {
+            id: String(project._id),
+            _id: String(project._id),
+            title: project.title,
+            status: project.status,
+            orderId: project.orderId ? String(project.orderId) : null
+        } : null,
+        order
+    }
 }
 
 const getMyContractsService = async(userId) => {
-    
-    const contracts = await Contract.find({
+    const rawContracts = await Contract.find({
         $or: [
             { buyerId: userId },
             { freelancerId: userId },
             { memberIds: userId }
         ]
-    })
+    }).sort({ createdAt: -1 }).lean()
 
-    return contracts
+    if (!rawContracts.length) return []
+
+    const projectIds = rawContracts.map(c => c.projectId).filter(Boolean)
+    const userIds = [
+        ...rawContracts.map(c => c.buyerId).filter(Boolean),
+        ...rawContracts.map(c => c.freelancerId).filter(Boolean),
+        ...rawContracts.flatMap(c => c.memberIds || []).filter(Boolean)
+    ]
+
+    const [projects, users] = await Promise.all([
+        Project.find({ _id: { $in: projectIds } }).lean(),
+        User.find({ _id: { $in: userIds } }).select("name avatar email role").lean()
+    ])
+
+    const projectMap = new Map(projects.map(p => [String(p._id), p]))
+    const userMap = new Map(users.map(u => [String(u._id), u]))
+
+    const orderIds = projects.map(p => p.orderId).filter(Boolean)
+    const orders = await Order.find({ _id: { $in: orderIds } }).lean()
+    const orderMap = new Map(orders.map(o => [String(o._id), o]))
+
+    const gigIds = orders.map(o => o.gig?._id).filter(Boolean)
+    const gigs = await Gig.find({ _id: { $in: gigIds } }).select("img_url image").lean()
+    const gigMap = new Map(gigs.map(g => [String(g._id), g]))
+
+    return rawContracts.map(contract => {
+        const project = projectMap.get(String(contract.projectId))
+        const buyer = userMap.get(String(contract.buyerId))
+        const freelancer = userMap.get(String(contract.freelancerId))
+        const order = project ? orderMap.get(String(project.orderId)) : null
+        const gigData = order ? gigMap.get(String(order.gig?._id)) : null
+
+        return {
+            ...contract,
+            buyer: buyer ? {
+                id: String(buyer._id),
+                _id: String(buyer._id),
+                name: buyer.name,
+                avatar: buyer.avatar,
+                email: buyer.email,
+                role: buyer.role
+            } : null,
+            freelancer: freelancer ? {
+                id: String(freelancer._id),
+                _id: String(freelancer._id),
+                name: freelancer.name,
+                avatar: freelancer.avatar,
+                email: freelancer.email,
+                role: freelancer.role
+            } : null,
+            members: (contract.memberIds || [])
+                .map(id => userMap.get(String(id)))
+                .filter(Boolean)
+                .map(u => ({
+                    id: String(u._id),
+                    _id: String(u._id),
+                    name: u.name,
+                    avatar: u.avatar,
+                    email: u.email,
+                    role: u.role
+                })),
+            project: project ? {
+                id: String(project._id),
+                _id: String(project._id),
+                title: project.title,
+                status: project.status,
+                orderId: project.orderId
+            } : null,
+            order: order ? {
+                id: String(order._id),
+                _id: String(order._id),
+                title: order.gig?.title,
+                price: order.price,
+                deliveryDeadline: order.deliveredAt || order.deliveryDeadline,
+                gig: {
+                    ...order.gig,
+                    img_url: gigData?.img_url || gigData?.image || null
+                }
+            } : null
+        }
+    })
 }
 
 const updateContractService = async (contractId, userId, data) => {
@@ -186,7 +326,7 @@ const updateContractService = async (contractId, userId, data) => {
         throw new AppError("Only buyer can update", 403)
     }
 
-    if (contract.status !== CONTRACT_STATUS.DRAFT) {
+    if (contract.status !== CONTRACT_STATUS.ACTIVE || contract.paidAmount > 0) {
         throw new AppError("Cannot update contract now", 400)
     }
 
@@ -262,19 +402,7 @@ const updateContractStatusService = async (contractId, userId, status) => {
     }
 
     if (status === CONTRACT_STATUS.ACTIVE) {
-        if (!isFreelancer) {
-            throw new AppError("Only freelancer can activate contract", 403)
-        }
-
-        if (contract.status !== CONTRACT_STATUS.DRAFT) {
-            throw new AppError("Invalid status transition", 400)
-        }
-
-        contract.startDate = new Date()
-        
-        await Project.findByIdAndUpdate(contract.projectId, {
-            status: PROJECT_STATUS.IN_PROGRESS
-        })
+        throw new AppError("Contract is already active", 400)
     }
 
     if (status === CONTRACT_STATUS.COMPLETED) {
@@ -292,22 +420,72 @@ const updateContractStatusService = async (contractId, userId, status) => {
             throw new AppError("Forbidden", 403)
         }
 
-        if (contract.status === CONTRACT_STATUS.COMPLETED) {
-            throw new AppError("Cannot cancel completed contract", 400)
+        if (contract.status === CONTRACT_STATUS.COMPLETED || contract.status === CONTRACT_STATUS.CANCELLED) {
+            throw new AppError("Cannot cancel completed or already cancelled contract", 400)
+        }
+
+        if (Number(contract.paidAmount || 0) > 0) {
+            throw new AppError("Cannot cancel contract with existing payments", 400)
         }
     }
 
     contract.status = status
 
-    if (status === CONTRACT_STATUS.ACTIVE) {
-        contract.startDate = new Date()
-    }
-
-    if (status === CONTRACT_STATUS.COMPLETED) {
+    if (status === CONTRACT_STATUS.COMPLETED || status === CONTRACT_STATUS.CANCELLED) {
         contract.endDate = new Date()
     }
 
     await contract.save()
+
+    // Synchronize Project, Order and Tasks
+    if (status === CONTRACT_STATUS.CANCELLED) {
+        const project = await Project.findById(contract.projectId)
+        if (project) {
+            project.status = PROJECT_STATUS.CANCELLED
+            await project.save()
+
+            if (project.orderId) {
+                await Order.findByIdAndUpdate(project.orderId, {
+                    status: ORDER_STATUS.CANCELLED
+                })
+            }
+
+            await Task.updateMany(
+                {
+                    projectId: project._id,
+                    status: { $in: [TASK_STATUS.TODO, TASK_STATUS.IN_PROGRESS] }
+                },
+                { status: TASK_STATUS.CANCELLED }
+            )
+        }
+
+        // Cross-user Notification: Notify counterpart about contract cancellation
+        const counterpartId = String(contract.freelancerId) === String(userId) ? contract.buyerId : contract.freelancerId
+        createNotificationSafe({
+            recipient: counterpartId,
+            sender: userId,
+            type: "contract_cancelled",
+            entityType: "contract",
+            entityId: contract._id,
+            link: `/app/contracts/${contract._id}`,
+            metadata: {
+                contractCode: `#HD${String(contract._id).slice(-6).toUpperCase()}`
+            }
+        })
+    } else if (status === CONTRACT_STATUS.COMPLETED) {
+        const project = await Project.findById(contract.projectId)
+        if (project) {
+            project.status = PROJECT_STATUS.COMPLETED
+            await project.save()
+
+            if (project.orderId) {
+                await Order.findByIdAndUpdate(project.orderId, {
+                    status: ORDER_STATUS.COMPLETED,
+                    deliveredAt: new Date()
+                })
+            }
+        }
+    }
 
     return contract
 }
@@ -349,9 +527,39 @@ const payContractService = async (contractId, userId, amount) => {
         throw new AppError("Amount exceeds remaining payable budget", 400)
     }
 
-    contract.paidAmount += amount
+    contract.paidAmount = Number((contract.paidAmount + amount).toFixed(2))
+
+    if (contract.paidAmount >= contract.price) {
+        contract.status = CONTRACT_STATUS.COMPLETED
+        contract.endDate = new Date()
+
+        const project = await Project.findById(contract.projectId)
+        if (project?.orderId) {
+            await Order.findByIdAndUpdate(project.orderId, {
+                status: ORDER_STATUS.COMPLETED,
+                deliveredAt: new Date()
+            })
+            await Project.findByIdAndUpdate(project._id, {
+                status: PROJECT_STATUS.COMPLETED
+            })
+        }
+    }
 
     await contract.save()
+
+    // Cross-user Notification: Notify Freelancer Lead about received payment
+    createNotificationSafe({
+        recipient: contract.freelancerId,
+        sender: userId,
+        type: "payment_received",
+        entityType: "contract",
+        entityId: contract._id,
+        link: `/app/contracts/${contract._id}`,
+        metadata: {
+            amount,
+            contractCode: `#HD${String(contract._id).slice(-6).toUpperCase()}`
+        }
+    })
 
     return contract
 }
@@ -797,7 +1005,116 @@ const getProjectsOverOrderBudgetService = async (userId, role, page, limit) => {
     }
 }
 
+const addContractMemberService = async (contractId, userId, email) => {
+    if (!mongoose.Types.ObjectId.isValid(contractId)) {
+        throw new AppError("Invalid Contract ID", 400)
+    }
 
+    const contract = await Contract.findById(contractId)
+    if (!contract) {
+        throw new AppError("Contract not found", 404)
+    }
+
+    // Only contract lead (freelancer) can manage team members
+    const isLead = String(contract.freelancerId) === String(userId)
+    if (!isLead) {
+        throw new AppError("Only contract lead can manage members", 403)
+    }
+
+    if (!email || typeof email !== "string" || !email.trim()) {
+        throw new AppError("Freelancer email is required", 400)
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const user = await User.findOne({ email: normalizedEmail })
+
+    if (!user) {
+        throw new AppError("User not found with this email", 404)
+    }
+
+    if (user.role !== "freelancer") {
+        throw new AppError("User must have freelancer role", 400)
+    }
+
+    if (String(user._id) === String(contract.freelancerId)) {
+        throw new AppError("User is already the contract lead", 400)
+    }
+
+    if (String(user._id) === String(contract.buyerId)) {
+        throw new AppError("Buyer cannot be a contract member", 400)
+    }
+
+    const currentMemberIds = (contract.memberIds || []).map(String)
+    if (currentMemberIds.includes(String(user._id))) {
+        throw new AppError("User is already a team member", 400)
+    }
+
+    contract.memberIds.push(user._id)
+    await contract.save()
+
+    // Cross-user Notification: Notify the added freelancer
+    const projectAdded = await Project.findById(contract.projectId).select("title").lean()
+    createNotificationSafe({
+        recipient: user._id,
+        sender: userId,
+        type: "member_added",
+        entityType: "project",
+        entityId: contract.projectId,
+        link: `/app/projects/${contract.projectId}`,
+        metadata: {
+            projectTitle: projectAdded?.title || "Project"
+        }
+    })
+
+    return await getContractByIdService(contract._id, userId)
+}
+
+const removeContractMemberService = async (contractId, userId, memberId) => {
+    if (!mongoose.Types.ObjectId.isValid(contractId)) {
+        throw new AppError("Invalid Contract ID", 400)
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(memberId)) {
+        throw new AppError("Invalid Member ID", 400)
+    }
+
+    const contract = await Contract.findById(contractId)
+    if (!contract) {
+        throw new AppError("Contract not found", 404)
+    }
+
+    // Only contract lead (freelancer) can manage team members
+    const isLead = String(contract.freelancerId) === String(userId)
+    if (!isLead) {
+        throw new AppError("Only contract lead can manage members", 403)
+    }
+
+    const currentMemberIds = (contract.memberIds || []).map(String)
+    const targetIndex = currentMemberIds.indexOf(String(memberId))
+
+    if (targetIndex === -1) {
+        throw new AppError("Member not found in contract", 404)
+    }
+
+    contract.memberIds.splice(targetIndex, 1)
+    await contract.save()
+
+    // Cross-user Notification: Notify the removed freelancer
+    const projectRemoved = await Project.findById(contract.projectId).select("title").lean()
+    createNotificationSafe({
+        recipient: memberId,
+        sender: userId,
+        type: "member_removed",
+        entityType: "project",
+        entityId: contract.projectId,
+        link: "/app/projects",
+        metadata: {
+            projectTitle: projectRemoved?.title || "Project"
+        }
+    })
+
+    return await getContractByIdService(contract._id, userId)
+}
 
 module.exports = {
     createContractService, 
@@ -812,5 +1129,7 @@ module.exports = {
     getFreelancerStatsService,
     getProjectSummaryService,
     getOverviewService,
-    getProjectsOverOrderBudgetService
+    getProjectsOverOrderBudgetService,
+    addContractMemberService,
+    removeContractMemberService
 }

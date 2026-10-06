@@ -1,16 +1,15 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuthStore } from '../stores/authStore'
 import { authService } from '../services/authService'
 import { Input, Button } from '../components/ui'
 import toast from 'react-hot-toast'
+import { getAuthErrorMessage } from '../utils/authError'
 
 export default function RegisterPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const setAuth = useAuthStore((state) => state.setAuth)
-
+  const location = useLocation()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -44,9 +43,9 @@ export default function RegisterPage() {
         password: formData.password,
       })
       toast.success(t('auth.registerSuccess'))
-      navigate('/auth/login')
+      navigate('/auth/login', { state: location.state })
     } catch (error) {
-      toast.error(error.response?.data?.message || t('auth.emailExists'))
+      toast.error(getAuthErrorMessage(error, t))
     } finally {
       setLoading(false)
     }
@@ -70,7 +69,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             required
             placeholder={t('auth.namePlaceholder')}
-            className="!rounded-xl !border-border !bg-background !py-3 !text-foreground focus:!border-primary-500 focus:!ring-primary-500/20"
+            className="rounded-xl! border-border! bg-background! py-3! text-foreground! focus:border-primary-500! focus:ring-primary-500/20!"
           />
         </div>
 
@@ -83,7 +82,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             required
             placeholder={t('auth.emailPlaceholder')}
-            className="!rounded-xl !border-border !bg-background !py-3 !text-foreground focus:!border-primary-500 focus:!ring-primary-500/20"
+            className="rounded-xl! border-border! bg-background! py-3! text-foreground! focus:border-primary-500! focus:ring-primary-500/20!"
           />
         </div>
 
@@ -96,7 +95,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             required
             placeholder={t('auth.passwordPlaceholder')}
-            className="!rounded-xl !border-border !bg-background !py-3 !text-foreground focus:!border-primary-500 focus:!ring-primary-500/20"
+            className="rounded-xl! border-border! bg-background! py-3! text-foreground! focus:border-primary-500! focus:ring-primary-500/20!"
           />
         </div>
 
@@ -109,7 +108,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             required
             placeholder={t('auth.passwordPlaceholder')}
-            className="!rounded-xl !border-border !bg-background !py-3 !text-foreground focus:!border-primary-500 focus:!ring-primary-500/20"
+            className="rounded-xl! border-border! bg-background! py-3! text-foreground! focus:border-primary-500! focus:ring-primary-500/20!"
           />
         </div>
 
@@ -120,7 +119,7 @@ export default function RegisterPage() {
 
       <div className="mt-7 border-t border-border pt-5 text-center text-sm">
         <span className="text-muted-foreground">{t('auth.alreadyHaveAccount')} </span>
-        <Link to="/auth/login" className="text-primary-600 hover:underline">
+        <Link to="/auth/login" state={location.state} className="text-primary-600 hover:underline">
           {t('auth.login')}
         </Link>
       </div>

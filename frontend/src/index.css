@@ -209,4 +209,87 @@
       transform: none;
     }
   }
+
+  @keyframes brake-bounce {
+    0% {
+      transform: translateY(0);
+    }
+    20% {
+      transform: translateY(16px) scale(0.992);
+    }
+    45% {
+      transform: translateY(-8px) scale(1.004);
+    }
+    68% {
+      transform: translateY(4px) scale(0.998);
+    }
+    85% {
+      transform: translateY(-2px);
+    }
+    100% {
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .animate-brake-bounce {
+    animation: brake-bounce 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .services-highlight-ring {
+    box-shadow: 0 0 0 2.5px #3B82F6, 0 12px 30px -5px rgba(59, 130, 246, 0.25);
+    border-color: #3B82F6 !important;
+  }
+
+  /* Decorative Floating & Sparkle Animations for Search Hero Section */
+  @keyframes float-up-down {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-8px) rotate(2deg);
+    }
+  }
+
+  @keyframes float-up-down-reverse {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(8px) rotate(-2deg);
+    }
+  }
+
+  @keyframes sparkle-pulse {
+    0%, 100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.18) rotate(8deg);
+      opacity: 1;
+      filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.75));
+    }
+  }
+
+  .animate-float-slow {
+    animation: float-up-down 3.5s ease-in-out infinite;
+  }
+
+  .animate-float-reverse {
+    animation: float-up-down-reverse 4.2s ease-in-out infinite;
+  }
+
+  .animate-sparkle {
+    animation: sparkle-pulse 3s ease-in-out infinite;
+  }
+
+  /* Utility to completely hide scrollbars while preserving scroll functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
+

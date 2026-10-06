@@ -28,7 +28,12 @@ const formatOrderSummary = (order) => {
     statusText: ORDER_STATUS_LABEL[order.status],
     createdAt: order.createdAt,
     deliveredAt: order.deliveredAt,
-    updatedAt: order.updatedAt
+    updatedAt: order.updatedAt,
+    buyer: order.buyer,
+    freelancer: order.freelancer,
+    gig: order.gig,
+    package: order.package,
+    project: order.project || null
   }
 }
 
@@ -71,7 +76,9 @@ const formatOrderDetail = (order) => {
           _id: packageData._id ? String(packageData._id) : undefined,
           price: Number(packageData.price)
         }
-      : null
+      : null,
+    project: order.project || null,
+    review: order.review || null
   }
 }
 

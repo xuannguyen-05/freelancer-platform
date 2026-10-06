@@ -45,4 +45,14 @@ export const contractService = {
     const response = await axiosInstance.get(`/contracts/project/${projectId}/summary`)
     return response.data
   },
+
+  addMember: async (contractId, email) => {
+    const response = await axiosInstance.post(`/contracts/${contractId}/members`, { email })
+    return response.data
+  },
+
+  removeMember: async (contractId, memberId) => {
+    const response = await axiosInstance.delete(`/contracts/${contractId}/members/${memberId}`)
+    return response.data
+  },
 }

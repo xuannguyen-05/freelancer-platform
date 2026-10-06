@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, UsersRound } from 'lucide-react'
 import { gigService } from '../../services/gigService'
+import { useAuthStore } from '../../stores/authStore'
 import { Avatar } from '../ui'
 import LandingDataState from './LandingDataState'
 import { useInView } from '../../hooks/useInView'
@@ -11,11 +12,28 @@ import { cn } from '../../utils/cn'
 export default function FeaturedFreelancersSection() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const [freelancers, setFreelancers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [retryToken, setRetryToken] = useState(0)
   const [sectionRef, sectionInView] = useInView()
+
+  const handleFreelancerClick = (freelancer) => {
+    if (!isAuthenticated) {
+      navigate('/auth/login', { state: { from: '/app/home?view=talent' } })
+    } else {
+      navigate(`/app/home?view=talent&search=${encodeURIComponent(freelancer.name)}`)
+    }
+  }
+
+  const handleBrowseFreelancers = () => {
+    if (!isAuthenticated) {
+      navigate('/auth/login', { state: { from: '/app/home?view=talent' } })
+    } else {
+      navigate('/app/home?view=talent')
+    }
+  }
 
   useEffect(() => {
     const fetchFreelancers = async () => {
@@ -56,7 +74,7 @@ export default function FeaturedFreelancersSection() {
             <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">{t('landing.freelancers.title')}</h2>
             <p className="mt-3 text-base leading-7 text-muted-foreground">{t('landing.freelancers.subtitle')}</p>
           </div>
-          <button type="button" onClick={() => navigate('/app/gigs')} className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary-600 transition hover:text-primary-700 dark:text-primary-400">{t('landing.freelancers.action')} <ArrowRight className="h-4 w-4" /></button>
+          <button type="button" onClick={handleBrowseFreelancers} className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary-600 transition hover:text-primary-700 dark:text-primary-400 cursor-pointer">{t('landing.freelancers.browseFreelancers', 'Browse freelancers')} <ArrowRight className="h-4 w-4" /></button>
         </div>
 
         {loading || error || freelancers.length === 0 ? (
@@ -76,9 +94,14 @@ export default function FeaturedFreelancersSection() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {freelancers.map((freelancer, index) => (
-              <article key={freelancer.id} style={{ transitionDelay: sectionInView ? `${index * 70}ms` : undefined }} className={cn('landing-reveal rounded-2xl border border-border bg-background p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-lg hover:shadow-primary-500/8', sectionInView && 'is-visible')}>
+              <article
+                key={freelancer.id}
+                onClick={() => handleFreelancerClick(freelancer)}
+                style={{ transitionDelay: sectionInView ? `${index * 70}ms` : undefined }}
+                className={cn('landing-reveal cursor-pointer rounded-2xl border border-border bg-background p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-lg hover:shadow-primary-500/8', sectionInView && 'is-visible')}
+              >
                 <Avatar src={freelancer.avatar} alt={freelancer.name} fallback={freelancer.name?.charAt(0) || 'F'} className="h-14 w-14 bg-primary-100 text-lg font-bold text-primary-700 dark:bg-primary-950/60 dark:text-primary-300" />
-                <h3 className="mt-4 text-base font-bold text-foreground">{freelancer.name}</h3>
+                <h3 className="mt-4 text-base font-bold text-foreground hover:text-primary-600 transition-colors">{freelancer.name}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{t('landing.freelancers.serviceProvider')}</p>
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {freelancer.categories.map((category) => <span key={category} className="rounded-md border border-primary-100 bg-primary-50 px-2 py-1 text-xs font-medium text-primary-700 dark:border-primary-900 dark:bg-primary-950/50 dark:text-primary-300">{category}</span>)}

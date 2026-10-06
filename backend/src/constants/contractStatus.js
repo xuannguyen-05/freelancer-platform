@@ -1,12 +1,10 @@
 const CONTRACT_STATUS = {
-  DRAFT: "draft",
   ACTIVE: "active",
   COMPLETED: "completed",
   CANCELLED: "cancelled"
 }
 
-CONTRACT_STATUS_LABEL = {
-  draft: "DRAFT",
+const CONTRACT_STATUS_LABEL = {
   active: "ACTIVE",
   completed: "COMPLETED",
   cancelled: "CANCELLED"
