@@ -208,10 +208,10 @@ export default function OrderDetailPage() {
       setUpdatingOrder(true)
       try {
         await orderService.acceptOrder(order.id || order._id)
-        toast.success('Đã chấp nhận đơn hàng')
+        toast.success(t('order.acceptSuccess', 'Order accepted successfully'))
         await fetchOrderDetail()
       } catch (err) {
-        toast.error(err.response?.data?.message || err.message || 'Không thể chấp nhận đơn hàng')
+        toast.error(err.response?.data?.message || err.message || t('order.acceptError', 'Unable to accept order'))
       } finally {
         setUpdatingOrder(false)
       }
@@ -222,10 +222,10 @@ export default function OrderDetailPage() {
       setUpdatingOrder(true)
       try {
         await orderService.rejectOrder(order.id || order._id)
-        toast.success('Đã từ chối đơn hàng')
+        toast.success(t('order.rejectSuccess', 'Order rejected successfully'))
         await fetchOrderDetail()
       } catch (err) {
-        toast.error(err.response?.data?.message || err.message || 'Không thể từ chối đơn hàng')
+        toast.error(err.response?.data?.message || err.message || t('order.rejectError', 'Unable to reject order'))
       } finally {
         setUpdatingOrder(false)
       }
