@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { adminService } from '../../services/adminService'
+import { skillService } from '../../services/skillService'
 import ApplicationDetailModal from './ApplicationDetailModal'
 
 export default function AdminBecomeFreelancerPage() {
@@ -29,9 +30,32 @@ export default function AdminBecomeFreelancerPage() {
   const [applications, setApplications] = useState([])
   const [pagination, setPagination] = useState({ total: 0, page: 1, totalPages: 1 })
   const [counts, setCounts] = useState({ all: 0, pending: 0, approved: 0, rejected: 0 })
+  const [skillsMap, setSkillsMap] = useState({})
 
   const [selectedApp, setSelectedApp] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
+
+  useEffect(() => {
+    skillService.getSkills().then((res) => {
+      const list = res?.data || (Array.isArray(res) ? res : [])
+      const map = {}
+      list.forEach((sk) => {
+        const id = sk._id || sk.id
+        if (id) map[String(id)] = sk.name || sk.skillName
+      })
+      setSkillsMap(map)
+    }).catch(() => {})
+  }, [])
+
+  const getSkillLabel = (s) => {
+    if (!s) return ''
+    if (typeof s === 'object' && s !== null) {
+      if (s.name) return s.name
+      if (s.skillName) return s.skillName
+    }
+    const id = typeof s === 'object' && s !== null ? (s._id || s.id) : s
+    return skillsMap[String(id)] || (typeof s === 'object' ? '' : s)
+  }
 
   const fetchApplications = async () => {
     setLoading(true)
@@ -224,10 +248,10 @@ export default function AdminBecomeFreelancerPage() {
                       <div className="flex flex-wrap gap-1">
                         {app.skills?.slice(0, 3).map((s) => (
                           <span
-                            key={s._id || s}
+                            key={s?._id || s?.id || s}
                             className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px]"
                           >
-                            {s.name || s}
+                            {getSkillLabel(s)}
                           </span>
                         ))}
                         {app.skills?.length > 3 && (
@@ -319,6 +343,7 @@ export default function AdminBecomeFreelancerPage() {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onStatusChanged={fetchApplications}
+        skillsMap={skillsMap}
       />
     </div>
   )

@@ -21,9 +21,20 @@ export default function ApplicationDetailModal({
   application,
   isOpen,
   onClose,
-  onStatusChanged
+  onStatusChanged,
+  skillsMap = {}
 }) {
   const { t } = useTranslation()
+
+  const getSkillLabel = (s) => {
+    if (!s) return ''
+    if (typeof s === 'object' && s !== null) {
+      if (s.name) return s.name
+      if (s.skillName) return s.skillName
+    }
+    const id = typeof s === 'object' && s !== null ? (s._id || s.id) : s
+    return skillsMap[String(id)] || (typeof s === 'object' ? '' : s)
+  }
   const [rejecting, setRejecting] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -194,10 +205,10 @@ export default function ApplicationDetailModal({
                   ) : (
                     skills.map((s) => (
                       <span
-                        key={s._id || s}
+                        key={s?._id || s?.id || s}
                         className="px-3 py-1 rounded-lg text-xs font-medium bg-primary-50 text-primary-700 dark:bg-primary-950/70 dark:text-primary-300 border border-primary-100 dark:border-primary-900"
                       >
-                        {s.name || s}
+                        {getSkillLabel(s)}
                       </span>
                     ))
                   )}

@@ -437,10 +437,11 @@ export default function TopTalentPage() {
               const reviewsVal = Number(talent.reviewCount || 0)
               const hasRating = ratingVal > 0 || reviewsVal > 0
               const sloganText = talent.slogan || talent.professionalTitle || ''
-              const bioText = talent.description || talent.bio || ''
-              const skillsList = Array.isArray(talent.skills)
-                ? talent.skills.map((s) => (typeof s === 'string' ? s : s?.name)).filter(Boolean)
-                : []
+              const skillsList = talent.skillNames?.length > 0
+                ? talent.skillNames
+                : (Array.isArray(talent.skills)
+                    ? talent.skills.map((s) => (typeof s === 'string' ? (/^[0-9a-fA-F]{24}$/.test(s) ? '' : s) : s?.name)).filter(Boolean)
+                    : [])
               const visibleSkills = skillsList.slice(0, 3)
               const extraSkillsCount = skillsList.length - visibleSkills.length
 

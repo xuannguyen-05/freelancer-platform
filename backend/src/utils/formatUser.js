@@ -12,7 +12,11 @@ const formatUser = (user) => {
     location: user.location || "",
     professionalTitle: user.professionalTitle || user.freelancerProfile?.slogan || "",
     skills: user.skills || [],
-    skillNames: user.skillNames || (Array.isArray(user.skills) ? user.skills.map(s => s.name || s).filter(Boolean) : []),
+    skillNames: user.skillNames?.length > 0
+      ? user.skillNames
+      : (Array.isArray(user.skills)
+          ? user.skills.map(s => typeof s === 'object' && s !== null ? (s.name || '') : (/^[0-9a-fA-F]{24}$/.test(String(s)) ? '' : String(s))).filter(Boolean)
+          : []),
     role: user.role || "buyer",
     freelancerProfile: user.freelancerProfile || {},
     preferences: user.preferences || {

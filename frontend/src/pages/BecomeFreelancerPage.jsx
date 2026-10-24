@@ -101,6 +101,19 @@ export default function BecomeFreelancerPage() {
     return s.name?.toLowerCase().includes(skillSearch.toLowerCase().trim())
   })
 
+  const getSkillLabel = (s) => {
+    if (!s) return ''
+    if (typeof s === 'object' && s !== null) {
+      if (s.name) return s.name
+      if (s.skillName) return s.skillName
+    }
+    const skillId = typeof s === 'object' && s !== null ? (s._id || s.id) : s
+    const found = availableSkills.find(
+      (item) => String(item._id || item.id) === String(skillId)
+    )
+    return found?.name || found?.skillName || skillId
+  }
+
   const toggleSkill = (skillId) => {
     setSelectedSkillIds((prev) => {
       const next = prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
@@ -293,8 +306,8 @@ export default function BecomeFreelancerPage() {
                 <p className="text-slate-400 font-medium mb-1">Kỹ năng đã đăng ký:</p>
                 <div className="flex flex-wrap gap-1">
                   {myApplication.skills.map((s) => (
-                    <span key={s._id || s} className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-medium border border-amber-200/50">
-                      {s.name || s}
+                    <span key={s?._id || s?.id || s} className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-medium border border-amber-200/50">
+                      {getSkillLabel(s)}
                     </span>
                   ))}
                 </div>

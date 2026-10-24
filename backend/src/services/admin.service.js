@@ -437,6 +437,12 @@ const approveApplicationService = async (id, adminId) => {
     reviewCount: 0
   };
   user.skills = application.skills;
+  if (Array.isArray(application.skills) && application.skills.length > 0) {
+    const skillsData = await Skill.find({ _id: { $in: application.skills } }).select("name").lean();
+    user.skillNames = skillsData.map((s) => s.name);
+  } else {
+    user.skillNames = [];
+  }
   await user.save();
 
   // Send cross-user notification

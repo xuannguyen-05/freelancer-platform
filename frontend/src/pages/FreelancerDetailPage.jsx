@@ -163,7 +163,7 @@ export default function FreelancerDetailPage() {
   const ratingValue = hasReviews && freelancer.rating > 0 ? Number(freelancer.rating).toFixed(1) : '0'
   const skillsList = freelancer.skillNames?.length > 0
     ? freelancer.skillNames
-    : (freelancer.skills?.map((s) => (typeof s === 'string' ? s : s.name)).filter(Boolean) || [])
+    : (freelancer.skills?.map((s) => (typeof s === 'string' ? (/^[0-9a-fA-F]{24}$/.test(s) ? '' : s) : s?.name)).filter(Boolean) || [])
 
   return (
     <div className="min-h-screen bg-background pb-20">

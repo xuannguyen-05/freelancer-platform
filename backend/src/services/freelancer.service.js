@@ -73,7 +73,11 @@ const createFreelancerService = async(userId, data) => {
     })
 
     // User's role strictly remains "buyer" until approved by Admin!
-    return application.toObject()
+    const populated = await FreelancerApplication.findById(application._id)
+        .populate("skills", "name categoryId")
+        .lean()
+
+    return populated || application.toObject()
 }
 
 const getMyApplicationService = async(userId) => {
