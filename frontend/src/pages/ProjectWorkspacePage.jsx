@@ -639,15 +639,15 @@ export default function ProjectWorkspacePage() {
     isTaskAssignee(t) || (!getTaskAssigneeId(t) && isFreelancer && !isBuyer)
   )
 
-  const getTaskAssigneeName = (t) => {
-    const assigneeObj = getTaskAssignee(t)
+  const getTaskAssigneeName = (taskItem) => {
+    const assigneeObj = getTaskAssignee(taskItem)
     if (assigneeObj?.name) {
       return assigneeObj.name
     }
-    const aId = getTaskAssigneeId(t)
+    const aId = getTaskAssigneeId(taskItem)
     if (!aId) return null
     if (String(aId) === String(leadFreelancer?._id || leadFreelancer?.id)) return leadFreelancer.name
-    if (isTaskAssignee(t)) return t('workspace.assignedToYou', 'Giao cho bạn')
+    if (isTaskAssignee(taskItem)) return t('workspace.assignedToYou', 'Giao cho bạn')
     return null
   }
 
