@@ -21,6 +21,16 @@ export const orderService = {
     return response.data
   },
 
+  acceptOrder: async (id) => {
+    const response = await axiosInstance.patch(`/orders/${id}/accept`)
+    return response.data
+  },
+
+  rejectOrder: async (id) => {
+    const response = await axiosInstance.patch(`/orders/${id}/reject`)
+    return response.data
+  },
+
   cancelOrder: async (id) => {
     const response = await axiosInstance.patch(`/orders/${id}/cancel`)
     return response.data

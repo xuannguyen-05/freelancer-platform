@@ -1,6 +1,11 @@
 const { z } = require("zod")
 const { objectIdSchema } = require("../utils/objectIdSchema")
 
+const dueDateSchema = z.union([
+    z.string().datetime(),
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Due date must be a valid date")
+])
+
 const createTaskSchema = z.object({
     contractId: objectIdSchema,
     title: z.string().min(1),
@@ -11,7 +16,7 @@ const createTaskSchema = z.object({
 
     estimatedHours: z.number().min(0).optional(),
     effortPoint: z.number().int().min(1).max(13).optional(),
-    dueDate: z.string().datetime().optional()
+    dueDate: dueDateSchema.optional()
 })
 
 const updateTaskSchema = z.object({
@@ -20,7 +25,7 @@ const updateTaskSchema = z.object({
     assigneeId: objectIdSchema.optional(),
     estimatedHours: z.number().min(0).optional(),
     effortPoint: z.number().int().min(1).max(13).optional(),
-    dueDate: z.string().datetime().nullable().optional()
+    dueDate: dueDateSchema.nullable().optional()
 })
 .strict()
 .refine(data =>

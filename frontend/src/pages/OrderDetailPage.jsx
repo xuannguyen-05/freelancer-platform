@@ -50,6 +50,7 @@ export default function OrderDetailPage() {
   // Cancel order modal state
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [updatingOrder, setUpdatingOrder] = useState(false)
 
   // Review modal state
   const [showReviewModal, setShowReviewModal] = useState(false)
@@ -112,6 +113,18 @@ export default function OrderDetailPage() {
           label: t('order.cancelled', 'Đã hủy'),
           className: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200/70 dark:border-rose-800/70',
           dot: 'bg-rose-500'
+        }
+      case 'accepted':
+        return {
+          label: t('order.accepted', 'Đã chấp nhận'),
+          className: 'bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border-sky-200/70 dark:border-sky-800/70',
+          dot: 'bg-sky-500'
+        }
+      case 'delivered':
+        return {
+          label: t('order.delivered', 'Đã giao hàng'),
+          className: 'bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border-violet-200/70 dark:border-violet-800/70',
+          dot: 'bg-violet-500'
         }
       case 'in_progress':
         return {
@@ -189,6 +202,34 @@ export default function OrderDetailPage() {
     } finally {
       setCancelling(false)
     }
+
+    const handleAcceptOrder = async () => {
+      if (!order) return
+      setUpdatingOrder(true)
+      try {
+        await orderService.acceptOrder(order.id || order._id)
+        toast.success('Đã chấp nhận đơn hàng')
+        await fetchOrderDetail()
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Không thể chấp nhận đơn hàng')
+      } finally {
+        setUpdatingOrder(false)
+      }
+    }
+
+    const handleRejectOrder = async () => {
+      if (!order) return
+      setUpdatingOrder(true)
+      try {
+        await orderService.rejectOrder(order.id || order._id)
+        toast.success('Đã từ chối đơn hàng')
+        await fetchOrderDetail()
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Không thể từ chối đơn hàng')
+      } finally {
+        setUpdatingOrder(false)
+      }
+    }
   }
 
   const handleContact = async () => {
@@ -232,7 +273,10 @@ export default function OrderDetailPage() {
 
   const orderId = order.id || order._id
   const formattedCode = orderId ? `#ORD${orderId.slice(-6).toUpperCase()}` : '#ORD'
-  const statusBadge = getOrderStatusBadge(order.status)
+  const displayStatus = ['in_progress', 'delivered', 'completed', 'cancelled'].includes(order.project?.status)
+    ? order.project.status
+    : order.status
+  const statusBadge = getOrderStatusBadge(displayStatus)
   const deadlineDate = order.deliveredAt || new Date(new Date(order.createdAt).getTime() + (order.package?.deliveryDays || 7) * 24 * 60 * 60 * 1000)
 
   // Features from package, if any (no hardcoded fallbacks)
@@ -572,7 +616,7 @@ export default function OrderDetailPage() {
                 </div>
               )}
 
-              {isBuyer && order.status === 'pending' && (
+              {isBuyer && ['pending', 'accepted'].includes(order.status) && (
                 <Button
                   variant="outline"
                   onClick={() => setShowCancelModal(true)}
@@ -792,16 +836,36 @@ export default function OrderDetailPage() {
                 </p>
               </div>
 
-              {isBuyer ? (
+              {isBuyer && order.status === 'accepted' ? (
                 <Button
                   onClick={() => setShowCreateProjectModal(true)}
                   className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl shadow-xs cursor-pointer"
                 >
                   {t('orderDetail.createProjectBtn', 'Tạo dự án')}
                 </Button>
+              ) : isFreelancer && order.status === 'pending' ? (
+                <div className="flex gap-2">
+                  <Button
+                    disabled={updatingOrder}
+                    onClick={handleRejectOrder}
+                    variant="outline"
+                    className="flex-1 text-xs font-semibold"
+                  >
+                    Từ chối
+                  </Button>
+                  <Button
+                    disabled={updatingOrder}
+                    onClick={handleAcceptOrder}
+                    className="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold"
+                  >
+                    {updatingOrder ? 'Đang xử lý...' : 'Chấp nhận'}
+                  </Button>
+                </div>
               ) : (
                 <p className="text-xs text-muted-foreground italic">
-                  Khách hàng sẽ khởi tạo không gian dự án sau khi đặt hàng.
+                  {isBuyer
+                    ? 'Chờ freelancer chấp nhận đơn hàng trước khi tạo dự án.'
+                    : 'Khách hàng sẽ khởi tạo không gian dự án sau khi bạn chấp nhận đơn hàng.'}
                 </p>
               )}
             </div>

@@ -70,6 +70,7 @@ export default function OrdersPage() {
   const metrics = useMemo(() => {
     const total = orders.length
     const pending = orders.filter((o) => o.status === 'pending').length
+    const accepted = orders.filter((o) => o.status === 'accepted').length
     const inProgress = orders.filter(
       (o) => o.status === 'in_progress' || o.project?.status === 'in_progress'
     ).length
@@ -78,7 +79,7 @@ export default function OrdersPage() {
       .filter((o) => o.status !== 'cancelled')
       .reduce((sum, o) => sum + (Number(o.price) || Number(o.totalAmount) || 0), 0)
 
-    return { total, pending, inProgress, completed, totalRevenue }
+    return { total, pending, accepted, inProgress, completed, totalRevenue }
   }, [orders])
 
   // Live Tab Counts calculated from real backend orders
@@ -86,6 +87,7 @@ export default function OrdersPage() {
     return {
       all: orders.length,
       pending: orders.filter((o) => o.status === 'pending').length,
+      accepted: orders.filter((o) => o.status === 'accepted').length,
       in_progress: orders.filter(
         (o) => o.status === 'in_progress' || o.project?.status === 'in_progress'
       ).length,
@@ -98,6 +100,7 @@ export default function OrdersPage() {
   const tabs = [
     { id: 'all', label: t('order.all', 'Tất cả'), count: tabCounts.all },
     { id: 'pending', label: t('order.pending', 'Đang xử lý'), count: tabCounts.pending },
+    { id: 'accepted', label: t('order.accepted', 'Đã chấp nhận'), count: tabCounts.accepted },
     { id: 'in_progress', label: t('order.inProgress', 'Đang thực hiện'), count: tabCounts.in_progress },
     { id: 'completed', label: t('order.completed', 'Đã hoàn thành'), count: tabCounts.completed },
     { id: 'cancelled', label: t('order.cancelled', 'Đã hủy'), count: tabCounts.cancelled },
@@ -108,6 +111,7 @@ export default function OrdersPage() {
     let result = orders.filter((order) => {
       // Tab filter
       if (activeTab === 'pending' && order.status !== 'pending') return false
+      if (activeTab === 'accepted' && order.status !== 'accepted') return false
       if (
         activeTab === 'in_progress' &&
         order.status !== 'in_progress' &&
@@ -189,6 +193,15 @@ export default function OrdersPage() {
         progress: 0,
       }
     }
+    if (projectStatus === 'delivered') {
+      return {
+        label: t('order.delivered', 'Đã giao hàng'),
+        className:
+          'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-200/70 dark:border-violet-800/70',
+        dotClass: 'bg-violet-500',
+        progress: 90,
+      }
+    }
     if (status === 'in_progress' || projectStatus === 'in_progress') {
       return {
         label: t('order.inProgress', 'Đang thực hiện'),
@@ -196,6 +209,15 @@ export default function OrdersPage() {
           'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200/70 dark:border-blue-800/70',
         dotClass: 'bg-blue-500',
         progress: 60,
+      }
+    }
+    if (status === 'accepted') {
+      return {
+        label: t('order.accepted', 'Đã chấp nhận'),
+        className:
+          'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200/70 dark:border-sky-800/70',
+        dotClass: 'bg-sky-500',
+        progress: 25,
       }
     }
     return {

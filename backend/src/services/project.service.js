@@ -25,8 +25,8 @@ const createProjectService = async(orderId, userId, description) => {
         throw new AppError("Only the buyer of this order can create a project", 403)
     }
 
-    if (order.status !== ORDER_STATUS.PENDING && order.status !== "completed") {
-        throw new AppError("Order is not active", 400)
+    if (order.status !== ORDER_STATUS.ACCEPTED) {
+        throw new AppError("Freelancer must accept the order first", 400)
     }
 
     if (!order.gig?.title) {

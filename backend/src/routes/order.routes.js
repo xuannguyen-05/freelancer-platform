@@ -5,7 +5,9 @@ const {
     getMyOrders,
     getFreelancerOrders,
     getOrderById,
-    cancelOrder
+    cancelOrder,
+    acceptOrder,
+    rejectOrder
 } = require("../controllers/order.controller");
 
 const { authMiddleware } = require("../middlewares/auth.middleware");
@@ -22,12 +24,15 @@ router.get("/my", authMiddleware, roleMiddleware(["buyer"]), getMyOrders)
 
 router.get("/freelancer", authMiddleware, roleMiddleware(["freelancer"]), getFreelancerOrders)
 
+router.patch("/:id/accept", authMiddleware, roleMiddleware(["freelancer"]), acceptOrder)
+
+router.patch("/:id/reject", authMiddleware, roleMiddleware(["freelancer"]), rejectOrder)
+
 router.get("/:id", authMiddleware, getOrderById)
 
 router.patch("/:id/cancel", authMiddleware, roleMiddleware(["buyer"]), cancelOrder)
 
 
 module.exports = router
-
 
 

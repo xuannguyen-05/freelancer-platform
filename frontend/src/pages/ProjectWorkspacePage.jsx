@@ -44,6 +44,10 @@ import { formatCurrency } from '../utils/format'
 import { cn } from '../utils/cn'
 import toast from 'react-hot-toast'
 
+const toDueDateIso = (date) => (
+  date ? `${date}T23:59:59.999Z` : undefined
+)
+
 export default function ProjectWorkspacePage() {
   const { id, tab } = useParams()
   const navigate = useNavigate()
@@ -327,7 +331,7 @@ export default function ProjectWorkspacePage() {
         contractId,
         title: newTaskTitle.trim(),
         description: newTaskDesc.trim(),
-        dueDate: newTaskDueDate || undefined,
+        dueDate: toDueDateIso(newTaskDueDate),
         estimatedHours: Number(newTaskHours) || 4,
       }
       if (newTaskAssigneeId) {
@@ -432,7 +436,7 @@ export default function ProjectWorkspacePage() {
       const payload = {
         title: editTaskTitle.trim(),
         description: editTaskDesc.trim(),
-        dueDate: editTaskDueDate || undefined,
+        dueDate: toDueDateIso(editTaskDueDate),
         estimatedHours: Number(editTaskHours) || 4,
       }
       if (editTaskAssigneeId) {

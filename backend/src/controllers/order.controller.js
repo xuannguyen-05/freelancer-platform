@@ -2,7 +2,9 @@ const {createOrderService,
         getMyOrdersService, 
         getFreelancerOrdersService, 
         getOrderByIdService, 
-        cancelOrderService
+        cancelOrderService,
+        acceptOrderService,
+        rejectOrderService
         } = require("../services/order.service")
     const { formatOrderSummary, formatOrderDetail } = require("../utils/formatOrder")
 
@@ -105,10 +107,44 @@ const cancelOrder = async(req, res) => {
     }
 }
 
+const acceptOrder = async(req, res) => {
+    try {
+        const order = await acceptOrderService(req.params.id, req.user.userID)
+
+        res.status(200).json({
+            message: "Accept order successfully",
+            data: formatOrderDetail(order)
+        })
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
+            message: error.message
+        })
+    }
+}
+
+const rejectOrder = async(req, res) => {
+    try {
+        const order = await rejectOrderService(req.params.id, req.user.userID)
+
+        res.status(200).json({
+            message: "Reject order successfully",
+            data: formatOrderDetail(order)
+        })
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            code: error.code || (error.statusCode >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"),
+            message: error.message
+        })
+    }
+}
+
 
 module.exports = {createOrder, 
                 getMyOrders, 
                 getFreelancerOrders, 
                 getOrderById, 
-                cancelOrder
+                cancelOrder,
+                acceptOrder,
+                rejectOrder
                 }

@@ -342,13 +342,6 @@ const updateTaskStatusService = async (taskId, userId, data) => {
         throw new AppError("Project is not active", 400)
     }
 
-    if (
-        project.status === PROJECT_STATUS.PLANNING &&
-        data.status === TASK_STATUS.IN_PROGRESS
-    ) {
-        throw new AppError("Project has not started yet", 400)
-    }
-
     const isBuyer = String(project.buyerId) === String(userId)
 
     const contract = await Contract.findById(task.contractId)
@@ -383,6 +376,14 @@ const updateTaskStatusService = async (taskId, userId, data) => {
     }
 
     let updateData = { status }
+
+    if (
+        project.status === PROJECT_STATUS.PLANNING &&
+        status === TASK_STATUS.IN_PROGRESS
+    ) {
+        project.status = PROJECT_STATUS.IN_PROGRESS
+        await project.save()
+    }
 
     if (status === TASK_STATUS.IN_PROGRESS) {
         updateData.startedAt = new Date()

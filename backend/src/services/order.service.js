@@ -251,7 +251,7 @@ const cancelOrderService = async(orderId, userId) => {
         throw new AppError("Only Buyer Can Cancel", 403)
     }
 
-    if (order.status !== ORDER_STATUS.PENDING) {
+    if (![ORDER_STATUS.PENDING, ORDER_STATUS.ACCEPTED].includes(order.status)) {
         throw new AppError("Cannot Cancel This Order", 400)
     }
 
@@ -297,10 +297,88 @@ const cancelOrderService = async(orderId, userId) => {
     return order.toObject()
 } 
 
+const acceptOrderService = async(orderId, userId) => {
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+        throw new AppError("Invalid Order ID", 400)
+    }
+
+    const order = await Order.findById(orderId)
+
+    if (!order) {
+        throw new AppError("Order Not Found", 404)
+    }
+
+    if (String(order.freelancer._id) !== String(userId)) {
+        throw new AppError("Only the assigned freelancer can accept this order", 403)
+    }
+
+    if (order.status !== ORDER_STATUS.PENDING) {
+        throw new AppError("Only pending orders can be accepted", 400)
+    }
+
+    order.status = ORDER_STATUS.ACCEPTED
+    await order.save()
+
+    createNotificationSafe({
+        recipient: order.buyer._id,
+        sender: userId,
+        type: "order_accepted",
+        entityType: "order",
+        entityId: order._id,
+        link: `/app/orders/${order._id}`,
+        metadata: {
+            orderCode: `#ORD${String(order._id).slice(-6).toUpperCase()}`,
+            actorName: order.freelancer?.name || "Freelancer"
+        }
+    })
+
+    return order.toObject()
+}
+
+const rejectOrderService = async(orderId, userId) => {
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+        throw new AppError("Invalid Order ID", 400)
+    }
+
+    const order = await Order.findById(orderId)
+
+    if (!order) {
+        throw new AppError("Order Not Found", 404)
+    }
+
+    if (String(order.freelancer._id) !== String(userId)) {
+        throw new AppError("Only the assigned freelancer can reject this order", 403)
+    }
+
+    if (order.status !== ORDER_STATUS.PENDING) {
+        throw new AppError("Only pending orders can be rejected", 400)
+    }
+
+    order.status = ORDER_STATUS.CANCELLED
+    await order.save()
+
+    createNotificationSafe({
+        recipient: order.buyer._id,
+        sender: userId,
+        type: "order_rejected",
+        entityType: "order",
+        entityId: order._id,
+        link: `/app/orders/${order._id}`,
+        metadata: {
+            orderCode: `#ORD${String(order._id).slice(-6).toUpperCase()}`,
+            actorName: order.freelancer?.name || "Freelancer"
+        }
+    })
+
+    return order.toObject()
+}
+
 
 module.exports = {createOrderService, 
                 getMyOrdersService, 
                 getFreelancerOrdersService, 
                 getOrderByIdService, 
-                cancelOrderService
+                cancelOrderService,
+                acceptOrderService,
+                rejectOrderService
                 }
