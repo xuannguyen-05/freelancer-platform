@@ -1577,10 +1577,10 @@ export default function ProjectWorkspacePage() {
                     </div>
 
                     {/* Right: Actions, Status Badge, Chevron */}
-                    <div className="flex items-center justify-between sm:justify-end gap-2.5 sm:gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50">
                       {/* Status Badge */}
                       <span className={cn(
-                        'px-2.5 py-0.5 rounded-full text-xs font-semibold border shrink-0',
+                        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border shrink-0',
                         isDone
                           ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60'
                           : isInProgress
@@ -1589,6 +1589,8 @@ export default function ProjectWorkspacePage() {
                           ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200/60 dark:border-rose-800/60'
                           : 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60'
                       )}>
+                        {isDone && <Check className="w-3 h-3 stroke-[3]" />}
+                        {isInProgress && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
                         {isDone 
                           ? t('workspace.done', 'Hoàn thành') 
                           : isInProgress 
@@ -1599,7 +1601,7 @@ export default function ProjectWorkspacePage() {
                       </span>
 
                       {/* Contextual Action Buttons */}
-                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-1.5 pl-3 border-l border-border/70" onClick={(e) => e.stopPropagation()}>
                         {/* If Task is TODO */}
                         {isTodo && (
                           <>
@@ -1608,11 +1610,11 @@ export default function ProjectWorkspacePage() {
                               <button
                                 type="button"
                                 onClick={() => handleStartTask(task)}
-                                title={t('workspace.startTask', 'Bắt đầu làm')}
+                                title={t('workspace.startTask', 'Start Task')}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-600 hover:bg-primary-700 text-white cursor-pointer active:scale-95 transition-all shadow-xs"
                               >
                                 <Play className="w-3 h-3 fill-current" />
-                                <span>{t('workspace.startTask', 'Bắt đầu làm')}</span>
+                                <span>{t('workspace.startTask', 'Start Task')}</span>
                               </button>
                             )}
 
@@ -1633,7 +1635,7 @@ export default function ProjectWorkspacePage() {
                               <button
                                 type="button"
                                 onClick={() => handleCancelTask(task)}
-                                title={t('workspace.cancelTask', 'Hủy nhiệm vụ')}
+                                title={t('workspace.cancelTask', 'Cancel Task')}
                                 className="p-1.5 rounded-lg border border-border bg-background hover:bg-rose-50 dark:hover:bg-rose-950/40 text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
                               >
                                 <Ban className="w-3.5 h-3.5" />
@@ -1650,11 +1652,11 @@ export default function ProjectWorkspacePage() {
                               <button
                                 type="button"
                                 onClick={() => handleCompleteTask(task)}
-                                title={t('workspace.completeTask', 'Hoàn thành')}
+                                title={t('workspace.completeTask', 'Mark as Complete')}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs active:scale-95 transition-all"
                               >
                                 <Check className="w-3 h-3 stroke-[3]" />
-                                <span>{t('workspace.completeTask', 'Hoàn thành')}</span>
+                                <span>{t('workspace.completeTask', 'Mark as Complete')}</span>
                               </button>
                             )}
 
@@ -1663,7 +1665,7 @@ export default function ProjectWorkspacePage() {
                               <button
                                 type="button"
                                 onClick={() => handleCancelTask(task)}
-                                title={t('workspace.cancelTask', 'Hủy nhiệm vụ')}
+                                title={t('workspace.cancelTask', 'Cancel Task')}
                                 className="p-1.5 rounded-lg border border-border bg-background hover:bg-rose-50 dark:hover:bg-rose-950/40 text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
                               >
                                 <Ban className="w-3.5 h-3.5" />
@@ -2198,7 +2200,7 @@ export default function ProjectWorkspacePage() {
                         className="text-xs font-bold gap-1.5 cursor-pointer shadow-xs bg-primary-600 hover:bg-primary-700 text-white"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>{t('workspace.startTask', 'Bắt đầu làm')}</span>
+                        <span>{t('workspace.startTask', 'Start Task')}</span>
                       </Button>
                     )}
 
@@ -2226,7 +2228,7 @@ export default function ProjectWorkspacePage() {
                         className="text-xs font-semibold gap-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200 dark:border-rose-900 cursor-pointer"
                       >
                         <Ban className="w-3.5 h-3.5" />
-                        <span>{t('workspace.cancelTask', 'Hủy')}</span>
+                        <span>{t('workspace.cancelTask', 'Cancel Task')}</span>
                       </Button>
                     )}
                   </>
@@ -2243,7 +2245,7 @@ export default function ProjectWorkspacePage() {
                         className="text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
                       >
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
-                        <span>{t('workspace.completeTask', 'Hoàn thành')}</span>
+                        <span>{t('workspace.completeTask', 'Mark as Complete')}</span>
                       </Button>
                     )}
 
@@ -2256,7 +2258,7 @@ export default function ProjectWorkspacePage() {
                         className="text-xs font-semibold gap-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200 dark:border-rose-900 cursor-pointer"
                       >
                         <Ban className="w-3.5 h-3.5" />
-                        <span>{t('workspace.cancelTask', 'Hủy')}</span>
+                        <span>{t('workspace.cancelTask', 'Cancel Task')}</span>
                       </Button>
                     )}
                   </>
