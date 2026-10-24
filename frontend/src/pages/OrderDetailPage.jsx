@@ -55,8 +55,11 @@ export default function OrderDetailPage() {
   // Review modal state
   const [showReviewModal, setShowReviewModal] = useState(false)
 
-  const isBuyer = String(user?.id || user?._id || user?.userID) === String(order?.buyer?._id || order?.buyerID)
-  const isFreelancer = String(user?.id || user?._id || user?.userID) === String(order?.freelancer?._id || order?.freelancerID)
+  const currentUserId = user?.id || user?._id || user?.userID || user?.userId
+  const buyerId = order?.buyer?._id || order?.buyerID || order?.buyerId
+  const freelancerId = order?.freelancer?._id || order?.freelancerID || order?.freelancerId
+  const isBuyer = Boolean(currentUserId && buyerId) && String(currentUserId) === String(buyerId)
+  const isFreelancer = Boolean(currentUserId && freelancerId) && String(currentUserId) === String(freelancerId)
 
   const fetchOrderDetail = async () => {
     setLoading(true)
@@ -359,6 +362,28 @@ export default function OrderDetailPage() {
             <span className={cn('w-1.5 h-1.5 rounded-full', statusBadge.dot)} />
             {statusBadge.label}
           </span>
+
+          {isFreelancer && order.status === 'pending' && (
+            <div className="flex items-center gap-2">
+              <Button
+                disabled={updatingOrder}
+                onClick={handleRejectOrder}
+                variant="outline"
+                className="text-xs font-semibold"
+              >
+                {t('order.reject', 'Reject')}
+              </Button>
+              <Button
+                disabled={updatingOrder}
+                onClick={handleAcceptOrder}
+                className="bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold"
+              >
+                {updatingOrder
+                  ? t('common.processing', 'Processing...')
+                  : t('order.accept', 'Accept')}
+              </Button>
+            </div>
+          )}
 
           <div className="text-right">
             <div className="text-xl sm:text-2xl font-black text-foreground">
@@ -771,7 +796,9 @@ export default function OrderDetailPage() {
                   {t('orderDetail.stepDelivered', 'Giao sản phẩm')}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {order.deliveredAt ? formatDateTime(order.deliveredAt) : `Dự kiến trước: ${formatDate(deadlineDate)}`}
+                  {order.deliveredAt
+                    ? formatDateTime(order.deliveredAt)
+                    : t('orderDetail.expectedBy', { date: formatDate(deadlineDate) })}
                 </div>
               </div>
             </div>
@@ -843,31 +870,11 @@ export default function OrderDetailPage() {
                 >
                   {t('orderDetail.createProjectBtn', 'Tạo dự án')}
                 </Button>
-              ) : isFreelancer && order.status === 'pending' ? (
-                <div className="flex gap-2">
-                  <Button
-                    disabled={updatingOrder}
-                    onClick={handleRejectOrder}
-                    variant="outline"
-                    className="flex-1 text-xs font-semibold"
-                  >
-                    {t('order.reject', 'Reject')}
-                  </Button>
-                  <Button
-                    disabled={updatingOrder}
-                    onClick={handleAcceptOrder}
-                    className="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold"
-                  >
-                    {updatingOrder
-                      ? t('common.processing', 'Processing...')
-                      : t('order.accept', 'Accept')}
-                  </Button>
-                </div>
               ) : (
                 <p className="text-xs text-muted-foreground italic">
                   {isBuyer
-                    ? 'Chờ freelancer chấp nhận đơn hàng trước khi tạo dự án.'
-                    : 'Khách hàng sẽ khởi tạo không gian dự án sau khi bạn chấp nhận đơn hàng.'}
+                    ? t('orderDetail.waitingForFreelancerAcceptance', 'Waiting for the freelancer to accept the order before creating a project.')
+                    : t('orderDetail.waitingForBuyerProject', 'The client will create the project space after you accept the order.')}
                 </p>
               )}
             </div>
@@ -976,7 +983,9 @@ export default function OrderDetailPage() {
                 onClick={handleCancelOrder}
                 className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex-1"
               >
-                {cancelling ? 'Đang hủy...' : t('orderDetail.cancelOrder', 'Xác nhận hủy')}
+                {cancelling
+                  ? t('orderDetail.cancelling', 'Cancelling...')
+                  : t('orderDetail.confirmCancel', 'Confirm cancellation')}
               </Button>
             </div>
           </div>
