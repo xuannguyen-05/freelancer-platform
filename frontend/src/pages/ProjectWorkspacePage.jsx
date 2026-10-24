@@ -672,32 +672,32 @@ export default function ProjectWorkspacePage() {
   const activities = []
 
   // 1. Completed tasks
-  tasks.filter((t) => t.status === 'done').forEach((t) => {
+  tasks.filter((taskItem) => taskItem.status === 'done').forEach((taskItem) => {
     activities.push({
-      id: `task-done-${t.id || t._id}`,
+      id: `task-done-${taskItem.id || taskItem._id}`,
       type: 'task_done',
       avatar: freelancer.avatar,
       name: freelancer.name,
       text: t('workspace.activityCompletedTask', {
         name: freelancer.name,
-        task: t.title,
-        defaultValue: `${freelancer.name} đã hoàn thành nhiệm vụ "${t.title}"`
+        task: taskItem.title,
+        defaultValue: `${freelancer.name} đã hoàn thành nhiệm vụ "${taskItem.title}"`
       }),
-      time: t.updatedAt || t.createdAt,
+      time: taskItem.updatedAt || taskItem.createdAt,
     })
   })
 
   // 2. In-progress tasks
-  tasks.filter((t) => t.status === 'in_progress').slice(0, 2).forEach((t) => {
+  tasks.filter((taskItem) => taskItem.status === 'in_progress').slice(0, 2).forEach((taskItem) => {
     activities.push({
-      id: `task-prog-${t.id || t._id}`,
+      id: `task-prog-${taskItem.id || taskItem._id}`,
       type: 'task_in_progress',
       avatar: freelancer.avatar,
       name: freelancer.name,
       text: i18n.language === 'vi' 
-        ? `${freelancer.name} đang thực hiện nhiệm vụ "${t.title}"`
-        : `${freelancer.name} is working on task "${t.title}"`,
-      time: t.updatedAt || t.createdAt,
+        ? `${freelancer.name} đang thực hiện nhiệm vụ "${taskItem.title}"`
+        : `${freelancer.name} is working on task "${taskItem.title}"`,
+      time: taskItem.updatedAt || taskItem.createdAt,
     })
   })
 
