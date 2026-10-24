@@ -355,10 +355,6 @@ export default function ProjectWorkspacePage() {
 
   // Handle Start Task (todo -> in_progress)
   const handleStartTask = async (task) => {
-    if (project.status === 'planning') {
-      toast.error(t('workspace.projectPlanningTaskNotice', 'Dự án đang lên kế hoạch, chưa thể bắt đầu thực hiện nhiệm vụ.'))
-      return
-    }
     const taskId = task.id || task._id
     try {
       await taskService.updateTaskStatus(taskId, 'in_progress')
@@ -638,6 +634,10 @@ export default function ProjectWorkspacePage() {
     const assigneeId = getTaskAssigneeId(t)
     return Boolean(assigneeId && String(currentUserId) === String(assigneeId))
   }
+
+  const canExecuteTask = (t) => (
+    isTaskAssignee(t) || (!getTaskAssigneeId(t) && isContractLead)
+  )
 
   const getTaskAssigneeName = (t) => {
     const assigneeObj = getTaskAssignee(t)
@@ -1329,6 +1329,7 @@ export default function ProjectWorkspacePage() {
                   ) : (
                     tasks.slice(0, 3).map((task) => {
                       const isDone = task.status === 'done'
+                      const isCancelled = task.status === 'cancelled'
                       return (
                         <div
                           key={task.id || task._id}
@@ -1339,7 +1340,11 @@ export default function ProjectWorkspacePage() {
                             <CheckCircle2
                               className={cn(
                                 'w-4 h-4 shrink-0 transition-colors',
-                                isDone ? 'text-emerald-500 fill-emerald-500/20' : 'text-slate-300 dark:text-slate-700'
+                                isDone
+                                  ? 'text-emerald-500 fill-emerald-500/20'
+                                  : isCancelled
+                                  ? 'text-rose-400'
+                                  : 'text-slate-300 dark:text-slate-700'
                               )}
                             />
                             <span className={cn('text-xs font-semibold truncate', isDone && 'line-through text-muted-foreground')}>
@@ -1349,13 +1354,21 @@ export default function ProjectWorkspacePage() {
 
                           <span className={cn(
                             'text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ml-2',
-                            isDone 
+                            isDone
                               ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
+                              : isCancelled
+                              ? 'bg-rose-50 text-rose-600 border border-rose-200/60'
                               : task.status === 'in_progress'
                               ? 'bg-blue-50 text-blue-600 border border-blue-200/60'
                               : 'bg-amber-50 text-amber-600 border border-amber-200/60'
                           )}>
-                            {isDone ? t('workspace.done', 'Hoàn thành') : task.status === 'in_progress' ? t('workspace.inProgress', 'Đang thực hiện') : t('workspace.todo', 'Chờ xử lý')}
+                            {isDone
+                              ? t('workspace.done', 'Hoàn thành')
+                              : isCancelled
+                              ? t('workspace.cancelled', 'Đã hủy')
+                              : task.status === 'in_progress'
+                              ? t('workspace.inProgress', 'Đang thực hiện')
+                              : t('workspace.todo', 'Chờ xử lý')}
                           </span>
                         </div>
                       )
@@ -1444,6 +1457,7 @@ export default function ProjectWorkspacePage() {
               <option value="todo">{t('workspace.todo', 'Chờ xử lý')}</option>
               <option value="in_progress">{t('workspace.inProgress', 'Đang thực hiện')}</option>
               <option value="done">{t('workspace.done', 'Hoàn thành')}</option>
+              <option value="cancelled">{t('workspace.cancelled', 'Đã hủy')}</option>
             </select>
 
             {/* Add Task Button for Freelancer (Contract Lead) */}
@@ -1602,13 +1616,12 @@ export default function ProjectWorkspacePage() {
                         {/* If Task is TODO */}
                         {isTodo && (
                           <>
-                            {/* Start Task: only for Assignee */}
-                            {isAssignee && (
+                            {/* Assigned freelancer or contract lead can start an unassigned task */}
+                            {canExecuteTask(task) && (
                               <button
                                 type="button"
-                                disabled={project.status === 'planning'}
                                 onClick={() => handleStartTask(task)}
-                                title={project.status === 'planning' ? t('workspace.projectPlanningTaskNotice', 'Dự án đang lên kế hoạch, chưa thể bắt đầu thực hiện nhiệm vụ.') : t('workspace.startTask', 'Bắt đầu làm')}
+                                title={t('workspace.startTask', 'Bắt đầu làm')}
                                 className={cn(
                                   'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all shadow-xs',
                                   project.status === 'planning'
@@ -1651,7 +1664,7 @@ export default function ProjectWorkspacePage() {
                         {isInProgress && (
                           <>
                             {/* Complete Task: only for Assignee */}
-                            {isAssignee && (
+                            {canExecuteTask(task) && (
                               <button
                                 type="button"
                                 onClick={() => handleCompleteTask(task)}
@@ -2104,7 +2117,7 @@ export default function ProjectWorkspacePage() {
 
             <div className="space-y-3.5 text-xs sm:text-sm">
               {/* Notice if project is planning and task is todo */}
-              {project.status === 'planning' && selectedTask.status === 'todo' && (
+              {project.status === 'planning' && selectedTask.status === 'todo' && !canExecuteTask(selectedTask) && (
                 <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs border border-amber-200/60 dark:border-amber-900/40">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{t('workspace.projectPlanningTaskNotice', 'Dự án đang lên kế hoạch, chưa thể bắt đầu thực hiện nhiệm vụ.')}</span>
@@ -2194,11 +2207,10 @@ export default function ProjectWorkspacePage() {
                 {/* When Task is TODO */}
                 {selectedTask.status === 'todo' && (
                   <>
-                    {/* Start Task for Assignee */}
-                    {isTaskAssignee(selectedTask) && (
+                    {/* Assigned freelancer or contract lead can start an unassigned task */}
+                    {canExecuteTask(selectedTask) && (
                       <Button
                         size="sm"
-                        disabled={project.status === 'planning'}
                         onClick={() => handleStartTask(selectedTask)}
                         className={cn(
                           'text-xs font-bold gap-1.5 cursor-pointer shadow-xs',
@@ -2245,8 +2257,8 @@ export default function ProjectWorkspacePage() {
                 {/* When Task is IN_PROGRESS */}
                 {selectedTask.status === 'in_progress' && (
                   <>
-                    {/* Complete Task for Assignee */}
-                    {isTaskAssignee(selectedTask) && (
+                    {/* Assigned freelancer or contract lead can complete an unassigned task */}
+                    {canExecuteTask(selectedTask) && (
                       <Button
                         size="sm"
                         onClick={() => handleCompleteTask(selectedTask)}

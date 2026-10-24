@@ -142,7 +142,7 @@ const createTaskService = async(projectId, userId, data) => {
         projectId: project._id,
         contractId: contract._id,
         parentTaskId: data.parentTaskId || null,
-        assigneeId: data.assigneeId || String(contract.freelancerId),
+        assigneeId: data.assigneeId || null,
         title: data.title,
         description: data.description ?? "",
         estimatedHours: data.estimatedHours || 0,
@@ -370,7 +370,10 @@ const updateTaskStatusService = async (taskId, userId, data) => {
     }
 
     if (status === TASK_STATUS.IN_PROGRESS || status === TASK_STATUS.DONE) {
-        if (!task.assigneeId ||String(task.assigneeId) !== String(userId)) {
+        const isAssignedUser = task.assigneeId && String(task.assigneeId) === String(userId)
+        const isUnassignedContractLead = !task.assigneeId && String(contract.freelancerId) === String(userId)
+
+        if (!isAssignedUser && !isUnassignedContractLead) {
             throw new AppError("Only assignee can do this", 403)
         }
     }
