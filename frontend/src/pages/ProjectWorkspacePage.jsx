@@ -551,7 +551,7 @@ export default function ProjectWorkspacePage() {
   }
 
   // Computations
-  const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userID
+  const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userID || currentUser?.userId
   const currentContract = contracts[0] || project?.contract || null
 
   const isBuyer = Boolean(
@@ -636,7 +636,7 @@ export default function ProjectWorkspacePage() {
   }
 
   const canExecuteTask = (t) => (
-    isTaskAssignee(t) || (!getTaskAssigneeId(t) && isContractLead)
+    isTaskAssignee(t) || (!getTaskAssigneeId(t) && isFreelancer && !isBuyer)
   )
 
   const getTaskAssigneeName = (t) => {
@@ -1622,12 +1622,7 @@ export default function ProjectWorkspacePage() {
                                 type="button"
                                 onClick={() => handleStartTask(task)}
                                 title={t('workspace.startTask', 'Bắt đầu làm')}
-                                className={cn(
-                                  'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all shadow-xs',
-                                  project.status === 'planning'
-                                    ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed opacity-60'
-                                    : 'bg-primary-600 hover:bg-primary-700 text-white cursor-pointer active:scale-95'
-                                )}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-600 hover:bg-primary-700 text-white cursor-pointer active:scale-95 transition-all shadow-xs"
                               >
                                 <Play className="w-3 h-3 fill-current" />
                                 <span>{t('workspace.startTask', 'Bắt đầu làm')}</span>
@@ -2212,12 +2207,7 @@ export default function ProjectWorkspacePage() {
                       <Button
                         size="sm"
                         onClick={() => handleStartTask(selectedTask)}
-                        className={cn(
-                          'text-xs font-bold gap-1.5 cursor-pointer shadow-xs',
-                          project.status === 'planning'
-                            ? 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800'
-                            : 'bg-primary-600 hover:bg-primary-700 text-white'
-                        )}
+                        className="text-xs font-bold gap-1.5 cursor-pointer shadow-xs bg-primary-600 hover:bg-primary-700 text-white"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
                         <span>{t('workspace.startTask', 'Bắt đầu làm')}</span>

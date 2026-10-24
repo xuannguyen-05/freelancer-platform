@@ -371,9 +371,12 @@ const updateTaskStatusService = async (taskId, userId, data) => {
 
     if (status === TASK_STATUS.IN_PROGRESS || status === TASK_STATUS.DONE) {
         const isAssignedUser = task.assigneeId && String(task.assigneeId) === String(userId)
-        const isUnassignedContractLead = !task.assigneeId && String(contract.freelancerId) === String(userId)
+        const isUnassignedContractMember = !task.assigneeId && (
+            String(contract.freelancerId) === String(userId) ||
+            (contract.memberIds || []).some(id => String(id) === String(userId))
+        )
 
-        if (!isAssignedUser && !isUnassignedContractLead) {
+        if (!isAssignedUser && !isUnassignedContractMember) {
             throw new AppError("Only assignee can do this", 403)
         }
     }
