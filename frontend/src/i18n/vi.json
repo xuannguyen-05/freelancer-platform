@@ -915,6 +915,7 @@
     "projectPlanningTaskNotice": "Dự án đang lên kế hoạch, chưa thể bắt đầu thực hiện nhiệm vụ.",
     "assignedToYou": "Giao cho bạn",
     "assignee": "Người thực hiện",
+    "unassigned": "Chưa phân công",
     "onlyAssigneeCanUpdate": "Chỉ người được giao việc mới có quyền cập nhật tiến độ",
     "cannotEditStartedTask": "Nhiệm vụ đã bắt đầu hoặc hoàn thành, không thể chỉnh sửa",
     "activityCompletedTask": "{{name}} đã hoàn thành nhiệm vụ \"{{task}}\"",

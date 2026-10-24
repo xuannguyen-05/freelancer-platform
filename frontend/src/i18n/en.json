@@ -510,6 +510,7 @@
     "done": "Done",
     "cancelled": "Cancelled",
     "assignee": "Assignee",
+    "unassigned": "Unassigned",
     "estimatedHours": "Estimated Hours",
     "actualHours": "Actual Hours",
     "effortPoints": "Effort Points",

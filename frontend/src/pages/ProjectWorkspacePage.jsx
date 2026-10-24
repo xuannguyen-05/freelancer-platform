@@ -435,9 +435,7 @@ export default function ProjectWorkspacePage() {
         dueDate: toDueDateIso(editTaskDueDate),
         estimatedHours: Number(editTaskHours) || 4,
       }
-      if (editTaskAssigneeId) {
-        payload.assigneeId = editTaskAssigneeId
-      }
+      payload.assigneeId = editTaskAssigneeId || null
       const res = await taskService.updateTask(taskId, payload)
       toast.success(t('workspace.taskUpdatedSuccess', 'Cập nhật nhiệm vụ thành công!'))
       setShowEditTaskModal(false)
@@ -587,19 +585,8 @@ export default function ProjectWorkspacePage() {
     return mId && String(mId) !== String(leadId) && String(mId) !== String(buyerId) && m.role !== 'buyer'
   })
 
-  // Eligible assignees strictly for task assignments (Lead Freelancer + Contract Freelancer Members)
+  // Only freelancers added to the project team can be assigned to a task.
   const eligibleAssignees = []
-  if (leadFreelancer && (leadFreelancer._id || leadFreelancer.id)) {
-    eligibleAssignees.push({
-      _id: String(leadFreelancer._id || leadFreelancer.id),
-      id: String(leadFreelancer._id || leadFreelancer.id),
-      name: leadFreelancer.name || t('workspace.projectLeadRole', 'Trưởng dự án'),
-      avatar: leadFreelancer.avatar || null,
-      email: leadFreelancer.email || '',
-      role: 'freelancer',
-      isLead: true,
-    })
-  }
   contractMembers.forEach((m) => {
     const mId = String(m._id || m.id)
     if (!eligibleAssignees.some((a) => String(a.id || a._id) === mId)) {
@@ -2013,16 +2000,17 @@ export default function ProjectWorkspacePage() {
                 />
               </div>
 
-              {eligibleAssignees.length > 0 && (
+              {(
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground mb-1">
                     {t('workspace.assignee', 'Người thực hiện')}
                   </label>
                   <select
-                    value={newTaskAssigneeId || eligibleAssignees[0]?.id || ''}
+                    value={newTaskAssigneeId}
                     onChange={(e) => setNewTaskAssigneeId(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-border bg-background text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 cursor-pointer"
                   >
+                    <option value="">{t('workspace.unassigned', 'Unassigned')}</option>
                     {eligibleAssignees.map((assignee) => (
                       <option key={assignee.id} value={assignee.id}>
                         {assignee.name} {assignee.isLead ? `(${t('workspace.projectLeadRole', 'Trưởng dự án')})` : `(${t('workspace.teamMemberRole', 'Thành viên Freelancer')})`}
@@ -2350,16 +2338,17 @@ export default function ProjectWorkspacePage() {
                 />
               </div>
 
-              {eligibleAssignees.length > 0 && (
+              {(
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground mb-1">
                     {t('workspace.assignee', 'Người thực hiện')}
                   </label>
                   <select
-                    value={editTaskAssigneeId || eligibleAssignees[0]?.id || ''}
+                    value={editTaskAssigneeId}
                     onChange={(e) => setEditTaskAssigneeId(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-border bg-background text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 cursor-pointer"
                   >
+                    <option value="">{t('workspace.unassigned', 'Unassigned')}</option>
                     {eligibleAssignees.map((assignee) => (
                       <option key={assignee.id} value={assignee.id}>
                         {assignee.name} {assignee.isLead ? `(${t('workspace.projectLeadRole', 'Trưởng dự án')})` : `(${t('workspace.teamMemberRole', 'Thành viên Freelancer')})`}

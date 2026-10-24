@@ -273,7 +273,7 @@ const updateTaskService = async(taskId, userId, data) => {
 
         const allowedAssigneeIds = await resolveAllowedAssigneeIds(contract)
 
-        if (!allowedAssigneeIds.has(String(data.assigneeId))) {
+        if (data.assigneeId !== null && !allowedAssigneeIds.has(String(data.assigneeId))) {
             throw new AppError("Assignee must belong to contract team", 400)
         }
 

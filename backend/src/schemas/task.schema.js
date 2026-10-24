@@ -12,7 +12,7 @@ const createTaskSchema = z.object({
     description: z.string().optional(),
 
     parentTaskId: objectIdSchema.optional(),
-    assigneeId: objectIdSchema.optional(),
+    assigneeId: objectIdSchema.nullable().optional(),
 
     estimatedHours: z.number().min(0).optional(),
     effortPoint: z.number().int().min(1).max(13).optional(),
@@ -22,7 +22,7 @@ const createTaskSchema = z.object({
 const updateTaskSchema = z.object({
     title: z.string().min(1).optional(),
     description: z.string().optional(),
-    assigneeId: objectIdSchema.optional(),
+    assigneeId: objectIdSchema.nullable().optional(),
     estimatedHours: z.number().min(0).optional(),
     effortPoint: z.number().int().min(1).max(13).optional(),
     dueDate: dueDateSchema.nullable().optional()
