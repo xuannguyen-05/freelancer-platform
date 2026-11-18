@@ -437,6 +437,7 @@ export default function TopTalentPage() {
               const reviewsVal = Number(talent.reviewCount || 0)
               const hasRating = ratingVal > 0 || reviewsVal > 0
               const sloganText = talent.slogan || talent.professionalTitle || ''
+              const bioText = talent.bio || talent.description || ''
               const skillsList = talent.skillNames?.length > 0
                 ? talent.skillNames
                 : (Array.isArray(talent.skills)
